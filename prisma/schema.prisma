@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  STUDENT
+  RECRUITER
+  ADMIN
+}
+
+enum ProficiencyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum WorkMode {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+enum OpportunitySkillType {
+  REQUIRED
+  PREFERRED
+}
+
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  UNDER_REVIEW
+  SHORTLISTED
+  INTERVIEW
+  SELECTED
+  REJECTED
+}
+
+enum OpportunityStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+model User {
+  id               String            @id @default(uuid()) @db.Uuid
+  name             String            @db.VarChar(120)
+  email            String            @unique @db.VarChar(320)
+  passwordHash     String            @db.VarChar(255)
+  role             UserRole
+  createdAt        DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime          @updatedAt @db.Timestamptz(3)
+  studentProfile   StudentProfile?
+  recruiterProfile RecruiterProfile?
+
+  @@index([role])
+  @@index([createdAt])
+}
+
+model StudentProfile {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @unique @db.Uuid
+  university     String         @db.VarChar(200)
+  degree         String         @db.VarChar(160)
+  graduationYear Int            @db.SmallInt
+  cgpa           Decimal?       @db.Decimal(4, 2)
+  targetRole     String?        @db.VarChar(120)
+  bio            String?        @db.Text
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  skills         StudentSkill[]
+  applications   Application[]
+  assessments    Assessment[]
+
+  @@index([graduationYear])
+  @@index([targetRole])
+}
+
+model RecruiterProfile {
+  id            String        @id @default(uuid()) @db.Uuid
+  userId        String        @unique @db.Uuid
+  company       String        @db.VarChar(200)
+  designation   String        @db.VarChar(120)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  opportunities Opportunity[]
+
+  @@index([company])
+}
+
+model Skill {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String             @unique @db.VarChar(120)
+  category          String             @db.VarChar(100)
+  students          StudentSkill[]
+  opportunitySkills OpportunitySkill[]
+  learningResources LearningResource[]
+
+  @@index([category])
+}
+
+model StudentSkill {
+  id          String           @id @default(uuid()) @db.Uuid
+  studentId   String           @db.Uuid
+  skillId     String           @db.Uuid
+  proficiency ProficiencyLevel
+  verified    Boolean          @default(false)
+  student     StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  skill       Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([studentId, skillId])
+  @@index([skillId, proficiency, verified])
+}
+
+model Opportunity {
+  id                String             @id @default(uuid()) @db.Uuid
+  recruiterId       String             @db.Uuid
+  title             String             @db.VarChar(180)
+  company           String             @db.VarChar(200)
+  description       String             @db.Text
+  location          String?            @db.VarChar(160)
+  workMode          WorkMode
+  stipend           Decimal?           @db.Decimal(12, 2)
+  duration          String?            @db.VarChar(100)
+  minimumCgpa       Decimal?           @db.Decimal(4, 2)
+  deadline          DateTime           @db.Timestamptz(3)
+  status            OpportunityStatus  @default(DRAFT)
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(3)
+  recruiter         RecruiterProfile   @relation(fields: [recruiterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  opportunitySkills OpportunitySkill[]
+  applications      Application[]
+
+  @@index([recruiterId, status])
+  @@index([status, deadline])
+  @@index([workMode])
+  @@index([company])
+}
+
+model OpportunitySkill {
+  id            String               @id @default(uuid()) @db.Uuid
+  opportunityId String               @db.Uuid
+  skillId       String               @db.Uuid
+  type          OpportunitySkillType
+  weight        Decimal              @default(1) @db.Decimal(5, 2)
+  opportunity   Opportunity          @relation(fields: [opportunityId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  skill         Skill                @relation(fields: [skillId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([opportunityId, skillId])
+  @@index([skillId, type])
+}
+
+model Application {
+  id            String            @id @default(uuid()) @db.Uuid
+  studentId     String            @db.Uuid
+  opportunityId String            @db.Uuid
+  matchScore    Decimal?          @db.Decimal(5, 2)
+  status        ApplicationStatus @default(SAVED)
+  createdAt     DateTime          @default(now()) @db.Timestamptz(3)
+  appliedAt     DateTime?         @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @db.Timestamptz(3)
+  student       StudentProfile    @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  opportunity   Opportunity       @relation(fields: [opportunityId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([studentId, opportunityId])
+  @@index([opportunityId, status])
+  @@index([studentId, status])
+  @@index([createdAt])
+  @@index([appliedAt])
+}
+
+model Assessment {
+  id          String         @id @default(uuid()) @db.Uuid
+  studentId   String         @db.Uuid
+  category    String         @db.VarChar(100)
+  score       Decimal        @db.Decimal(5, 2)
+  completedAt DateTime       @default(now()) @db.Timestamptz(3)
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([studentId, category])
+  @@index([completedAt])
+}
+
+model LearningResource {
+  id         String          @id @default(uuid()) @db.Uuid
+  skillId    String          @db.Uuid
+  title      String          @db.VarChar(200)
+  url        String          @db.VarChar(2048)
+  difficulty DifficultyLevel
+  skill      Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([skillId, difficulty])
+}
