@@ -5,7 +5,14 @@
 - Node.js 20.19 or newer
 - PostgreSQL
 
-Copy `.env.example` to `.env` and configure:
+From the repository root, enter the backend and create its local environment file:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Configure the copied file:
 
 | Variable | Requirement |
 | --- | --- |
@@ -19,6 +26,9 @@ Copy `.env.example` to `.env` and configure:
 No second database URL or connection configuration is used.
 
 ## Commands
+
+All commands below run from `backend/`. The repository root intentionally has no
+Node package manifest.
 
 ```bash
 npm install                         # Install dependencies
@@ -38,7 +48,8 @@ npm run prisma:seed                 # Run prisma/seed.ts explicitly
 
 Run Prisma generation after installing dependencies or changing the schema. A
 reachable `DATABASE_URL` is required for migrations, seeding, and the live database
-health endpoint.
+health endpoint. Prisma reads `backend/prisma.config.ts`, and its schema and seed are
+`backend/prisma/schema.prisma` and `backend/prisma/seed.ts`.
 
 `JWT_SECRET` should be replaced with a securely generated deployment secret. Access
 tokens use the configured duration; refresh tokens and sessions are not implemented.

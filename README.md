@@ -1,11 +1,31 @@
-# SkillBridge Backend
+# SkillBridge
 
-Express and TypeScript backend foundation for SkillBridge, using PostgreSQL and
-Prisma ORM.
+SkillBridge is organized as a repository with separate backend, frontend, and
+documentation areas.
 
-The current HTTP surface contains infrastructure health checks plus registration,
-login, Bearer authentication, reusable role authorization, and current-user
-retrieval. Business feature routes are not implemented yet.
+```text
+SkillBridge/
+├── backend/    # Express, TypeScript, Prisma, and PostgreSQL backend
+├── frontend/   # Reserved for the upcoming Next.js frontend
+└── docs/       # Architecture, API, setup, and project-learning documentation
+```
+
+The implemented application currently lives entirely in `backend/`. Its HTTP
+surface contains infrastructure health checks plus registration, login, Bearer
+authentication, reusable role authorization, and current-user retrieval. Frontend
+and business feature routes are not implemented yet.
+
+## Backend quick start
+
+Run backend commands from `backend/`:
+
+```bash
+cd backend
+cp .env.example .env
+npm install
+npm run prisma:generate
+npm run dev
+```
 
 ## Project documentation
 

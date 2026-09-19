@@ -3,7 +3,9 @@
 SkillBridge is an Express 5 and strict-TypeScript modular monolith. Its implemented
 HTTP surface currently consists of infrastructure health checks plus registration,
 login, Bearer authentication, role authorization middleware, and current-user
-retrieval.
+retrieval. The backend is self-contained under `backend/`; `frontend/` is reserved
+for the upcoming Next.js application, and repository-level documentation remains in
+`docs/`.
 
 ## Request flow
 
@@ -22,9 +24,9 @@ retrieval.
 - **Services** own registration, login, current-user, and database-health operations.
   Password and JWT utilities have no HTTP or persistence responsibilities.
 - **Prisma** is initialized once during server startup and shared through
-  `src/lib/prisma.ts`.
+  `backend/src/lib/prisma.ts`.
 - **PostgreSQL** stores the relational SkillBridge data described in
-  `prisma/schema.prisma`.
+  `backend/prisma/schema.prisma`.
 
 Express 5 forwards rejected async handlers to centralized error middleware, so
 controllers do not need repetitive `try/catch` wrappers.
@@ -37,19 +39,27 @@ performs one indexed User lookup, so deletion and role changes apply immediately
 ## Current source structure
 
 ```text
-src/
-├── config/          # Typed environment parsing
-├── controllers/     # HTTP translation for health and authentication
-├── middleware/      # Validation, auth/RBAC, 404, and centralized errors
-├── routes/          # Root, health, and auth routers
-├── services/        # Auth and database-health operations
-├── validators/      # Health and auth Zod schemas
-├── utils/           # Errors, responses, bcrypt, and JWT helpers
-├── types/           # Request-scoped authenticated-user types
-├── generated/       # Generated Prisma Client (gitignored)
-├── lib/             # Shared Prisma lifecycle
-├── app.ts           # Express middleware and route composition
-└── server.ts        # Configuration, HTTP startup, and shutdown
+SkillBridge/
+├── backend/
+│   ├── src/
+│   │   ├── config/          # Typed environment parsing
+│   │   ├── controllers/     # HTTP translation for health and authentication
+│   │   ├── middleware/      # Validation, auth/RBAC, 404, and centralized errors
+│   │   ├── routes/          # Root, health, and auth routers
+│   │   ├── services/        # Auth and database-health operations
+│   │   ├── validators/      # Health and auth Zod schemas
+│   │   ├── utils/           # Errors, responses, bcrypt, and JWT helpers
+│   │   ├── types/           # Request-scoped authenticated-user types
+│   │   ├── generated/       # Generated Prisma Client (gitignored)
+│   │   ├── lib/             # Shared Prisma lifecycle
+│   │   ├── app.ts           # Express middleware and route composition
+│   │   └── server.ts        # Configuration, startup, and shutdown
+│   ├── prisma/              # Schema, migrations, and seed entry point
+│   ├── package.json
+│   ├── prisma.config.ts
+│   └── tsconfig*.json
+├── frontend/                # Reserved; no frontend implementation yet
+└── docs/                    # Repository-level living documentation
 ```
 
 Folders are added only when they contain a concrete module; no empty feature
@@ -58,9 +68,9 @@ directories are maintained.
 ## Runtime boundaries
 
 `createApp(config)` is side-effect free and does not open a port or database
-connection. `server.ts` loads configuration, initializes Prisma, starts HTTP, and
-handles SIGINT/SIGTERM. Shutdown stops accepting requests and disconnects Prisma;
-a ten-second timeout prevents shutdown from hanging indefinitely.
+connection. `backend/src/server.ts` loads configuration, initializes Prisma, starts
+HTTP, and handles SIGINT/SIGTERM. Shutdown stops accepting requests and disconnects
+Prisma; a ten-second timeout prevents shutdown from hanging indefinitely.
 
 Non-operational errors such as a missing required role profile are logged outside
 tests and exposed only as the generic `500 INTERNAL_SERVER_ERROR` envelope.

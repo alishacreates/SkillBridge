@@ -5,6 +5,18 @@ This document is a learning guide to the code that actually exists in SkillBridg
 It starts with a beginner-friendly mental model, then adds the implementation detail
 needed to explain the design in a technical interview.
 
+## Repository layout
+
+- `backend/` contains the complete Express, TypeScript, Prisma, and PostgreSQL
+  backend. Run npm and Prisma commands from this directory.
+- `frontend/` is reserved for the upcoming Next.js frontend; it contains no
+  application code yet.
+- `docs/` contains repository-level architecture, API, setup, decision, and learning
+  documentation.
+
+Backend source paths in this guide therefore begin with `backend/src/`, and the
+database schema lives at `backend/prisma/schema.prisma`.
+
 ## Authentication and Role-Based Authorization
 
 ### Beginner mental model
@@ -30,18 +42,18 @@ authoritative.
 
 | Responsibility | Actual code |
 | --- | --- |
-| Mount `/api/auth` | `src/routes/index.ts` — `createApiRouter` |
-| Define register, login, and current-user routes | `src/routes/auth.routes.ts` — `createAuthRouter` |
-| Parse body/query/params with Zod | `src/middleware/validate-request.ts` — `validateRequest` |
-| Define registration and login schemas | `src/validators/auth.validator.ts` |
-| Translate HTTP input/output | `src/controllers/auth.controller.ts` — `register`, `createLogin`, `currentUser` |
-| Register, log in, and load the current user | `src/services/auth.service.ts` — `registerUser`, `login`, `getCurrentUser` |
-| Hash and compare passwords | `src/utils/password.ts` — `hashPassword`, `verifyPassword` |
-| Create and verify JWTs | `src/utils/token.ts` — `createAccessToken`, `verifyAccessToken` |
-| Authenticate a protected request | `src/middleware/authenticate.ts` — `createAuthenticate` |
-| Enforce allowed roles | `src/middleware/require-role.ts` — `requireRole` |
-| Type the authenticated context | `src/types/auth.ts` — `AuthenticatedUser`, `AuthLocals`, `OptionalAuthLocals` |
-| Produce consistent errors | `src/utils/app-error.ts` and `src/middleware/error-handler.ts` |
+| Mount `/api/auth` | `backend/src/routes/index.ts` — `createApiRouter` |
+| Define register, login, and current-user routes | `backend/src/routes/auth.routes.ts` — `createAuthRouter` |
+| Parse body/query/params with Zod | `backend/src/middleware/validate-request.ts` — `validateRequest` |
+| Define registration and login schemas | `backend/src/validators/auth.validator.ts` |
+| Translate HTTP input/output | `backend/src/controllers/auth.controller.ts` — `register`, `createLogin`, `currentUser` |
+| Register, log in, and load the current user | `backend/src/services/auth.service.ts` — `registerUser`, `login`, `getCurrentUser` |
+| Hash and compare passwords | `backend/src/utils/password.ts` — `hashPassword`, `verifyPassword` |
+| Create and verify JWTs | `backend/src/utils/token.ts` — `createAccessToken`, `verifyAccessToken` |
+| Authenticate a protected request | `backend/src/middleware/authenticate.ts` — `createAuthenticate` |
+| Enforce allowed roles | `backend/src/middleware/require-role.ts` — `requireRole` |
+| Type the authenticated context | `backend/src/types/auth.ts` — `AuthenticatedUser`, `AuthLocals`, `OptionalAuthLocals` |
+| Produce consistent errors | `backend/src/utils/app-error.ts` and `backend/src/middleware/error-handler.ts` |
 
 ### Registration flow: `POST /api/auth/register`
 
@@ -59,12 +71,12 @@ POST /api/auth/register
 
 Step by step:
 
-1. `src/app.ts` mounts the root API router at `/api`.
-2. `createApiRouter` in `src/routes/index.ts` mounts `createAuthRouter(config)` at
+1. `backend/src/app.ts` mounts the root API router at `/api`.
+2. `createApiRouter` in `backend/src/routes/index.ts` mounts `createAuthRouter(config)` at
    `/auth`.
 3. `createAuthRouter` passes the request through
    `validateRequest(registerRequestSchema, register)`.
-4. `registerRequestSchema` in `src/validators/auth.validator.ts` parses a
+4. `registerRequestSchema` in `backend/src/validators/auth.validator.ts` parses a
    discriminated union based on `role`:
    - STUDENT requires `university`, `degree`, and `graduationYear`.
    - RECRUITER requires `company` and `designation`.
@@ -107,7 +119,7 @@ Encryption is designed to be reversible when someone has the decryption key.
 Password hashing is designed to be one-way: the application stores a derived hash,
 not the original password, and checks a future password against that hash.
 
-`hashPassword` in `src/utils/password.ts` calls:
+`hashPassword` in `backend/src/utils/password.ts` calls:
 
 ```ts
 bcrypt.hash(password, 12)
@@ -200,7 +212,7 @@ The payload contains claims—statements about the token:
 | `aud` | Audience: fixed to `skillbridge-api`. |
 
 `JWT_EXPIRES_IN` controls `exp`, while `JWT_SECRET` supplies the HS256 signing key.
-`src/config/env.ts` requires the secret to contain at least 32 UTF-8 bytes and limits
+`backend/src/config/env.ts` requires the secret to contain at least 32 UTF-8 bytes and limits
 duration syntax to positive minute, hour, or day values such as `15m`, `1h`, or
 `1d`.
 
@@ -241,7 +253,7 @@ Authorization: Bearer <token>
   -> getCurrentUser service
 ```
 
-`createAuthenticate` in `src/middleware/authenticate.ts` accepts exactly one Bearer
+`createAuthenticate` in `backend/src/middleware/authenticate.ts` accepts exactly one Bearer
 token, calls `verifyAccessToken`, and then performs:
 
 ```ts
@@ -305,7 +317,7 @@ not implemented yet.
 
 ### How `requireRole(...roles)` works
 
-`requireRole` is defined in `src/middleware/require-role.ts`. It accepts one or more
+`requireRole` is defined in `backend/src/middleware/require-role.ts`. It accepts one or more
 allowed `UserRole` values and returns `authorizeRole` middleware.
 
 1. It reads `response.locals.auth`.
@@ -333,7 +345,7 @@ deleted.
 
 ### Typed `res.locals.auth`
 
-`src/types/auth.ts` defines:
+`backend/src/types/auth.ts` defines:
 
 ```ts
 interface AuthenticatedUser {
@@ -381,7 +393,7 @@ JWT creation is not part of registration at all.
 
 ### What the tests prove—and what they do not
 
-The mocked persistence tests in `src/services/auth.service.test.ts` prove that:
+The mocked persistence tests in `backend/src/services/auth.service.test.ts` prove that:
 
 - `registerUser` calls `prisma.$transaction`;
 - User and profile writes use the callback transaction client;
@@ -402,12 +414,12 @@ the repository.
 Other auth tests use real bcrypt and `jose` behavior while mocking Prisma at the
 persistence boundary:
 
-- `src/auth.test.ts` tests register/login/me HTTP contracts.
-- `src/middleware/authenticate.test.ts` tests Bearer parsing, token failures, deleted
+- `backend/src/auth.test.ts` tests register/login/me HTTP contracts.
+- `backend/src/middleware/authenticate.test.ts` tests Bearer parsing, token failures, deleted
   users, and database-role freshness.
-- `src/middleware/require-role.test.ts` tests single-role and multi-role access.
-- `src/utils/password.test.ts` tests real bcrypt hashing and comparison.
-- `src/utils/token.test.ts` tests real JWT creation and verification.
+- `backend/src/middleware/require-role.test.ts` tests single-role and multi-role access.
+- `backend/src/utils/password.test.ts` tests real bcrypt hashing and comparison.
+- `backend/src/utils/token.test.ts` tests real JWT creation and verification.
 
 ## Interview-Level Questions and Concise Answers
 
@@ -447,7 +459,7 @@ decides whether that current role may continue.
 
 ### Where did you use transactions?
 
-`registerUser` in `src/services/auth.service.ts` uses an interactive Prisma
+`registerUser` in `backend/src/services/auth.service.ts` uses an interactive Prisma
 transaction to create the User and the matching StudentProfile or RecruiterProfile as
 one unit. Password hashing happens before the transaction.
 
