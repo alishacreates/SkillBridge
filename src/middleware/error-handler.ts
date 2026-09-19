@@ -50,6 +50,14 @@ export function createErrorHandler(config: AppConfig): ErrorRequestHandler {
     }
 
     if (error instanceof AppError) {
+      if (!error.isOperational) {
+        if (config.nodeEnv !== "test") {
+          console.error(error);
+        }
+        sendError(response, 500, "INTERNAL_SERVER_ERROR", "Internal server error");
+        return;
+      }
+
       sendError(response, error.statusCode, error.code, error.message, error.details);
       return;
     }

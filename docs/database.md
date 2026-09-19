@@ -1,7 +1,7 @@
 # Database
 
 The database is PostgreSQL, modeled by `prisma/schema.prisma` and accessed through
-Prisma 7.10.0. Task 3 does not change this schema.
+Prisma 7.10.0. Task 4 does not change this schema.
 
 ## Main entities
 

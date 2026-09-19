@@ -5,6 +5,8 @@ const baseEnvironment = {
   NODE_ENV: "development",
   PORT: "3000",
   DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/skillbridge",
+  JWT_SECRET: "12345678901234567890123456789012",
+  JWT_EXPIRES_IN: "15m",
 };
 
 describe("loadConfig", () => {
@@ -41,4 +43,35 @@ describe("loadConfig", () => {
   it("rejects ports outside the TCP range", () => {
     expect(() => loadConfig({ ...baseEnvironment, PORT: "70000" })).toThrow();
   });
+
+  it("requires authentication configuration", () => {
+    const { JWT_SECRET: _secret, ...withoutSecret } = baseEnvironment;
+
+    expect(() => loadConfig(withoutSecret)).toThrow(/JWT_SECRET/);
+  });
+
+  it("enforces JWT secret length using UTF-8 bytes", () => {
+    expect(() =>
+      loadConfig({ ...baseEnvironment, JWT_SECRET: "1234567890123456789012345678901" }),
+    ).toThrow(/JWT_SECRET/);
+
+    expect(loadConfig({ ...baseEnvironment, JWT_SECRET: "🔐🔐🔐🔐🔐🔐🔐🔐" }).jwtSecret).toBe(
+      "🔐🔐🔐🔐🔐🔐🔐🔐",
+    );
+  });
+
+  it.each(["15m", "1h", "1d"])("accepts controlled JWT duration %s", (duration) => {
+    expect(loadConfig({ ...baseEnvironment, JWT_EXPIRES_IN: duration }).jwtExpiresIn).toBe(
+      duration,
+    );
+  });
+
+  it.each(["0m", "15minutes", "1w", "later"])(
+    "rejects unsupported JWT duration %s",
+    (duration) => {
+      expect(() =>
+        loadConfig({ ...baseEnvironment, JWT_EXPIRES_IN: duration }),
+      ).toThrow(/JWT_EXPIRES_IN/);
+    },
+  );
 });

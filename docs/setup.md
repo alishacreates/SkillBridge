@@ -13,8 +13,8 @@ Copy `.env.example` to `.env` and configure:
 | `PORT` | Required integer from 1 through 65535. |
 | `DATABASE_URL` | Required PostgreSQL URL used by both Prisma CLI and the application. |
 | `FRONTEND_URL` | Optional URL in development/test; required in production for CORS. |
-| `JWT_SECRET` | Reserved for the future authentication task; currently optional. |
-| `JWT_EXPIRES_IN` | Reserved for the future authentication task; currently optional. |
+| `JWT_SECRET` | Required signing secret containing at least 32 UTF-8 bytes. |
+| `JWT_EXPIRES_IN` | Required positive duration matching `15m`, `1h`, or `1d` style (`m`, `h`, or `d`). |
 
 No second database URL or connection configuration is used.
 
@@ -39,3 +39,6 @@ npm run prisma:seed                 # Run prisma/seed.ts explicitly
 Run Prisma generation after installing dependencies or changing the schema. A
 reachable `DATABASE_URL` is required for migrations, seeding, and the live database
 health endpoint.
+
+`JWT_SECRET` should be replaced with a securely generated deployment secret. Access
+tokens use the configured duration; refresh tokens and sessions are not implemented.

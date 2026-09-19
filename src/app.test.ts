@@ -15,8 +15,8 @@ const testConfig: AppConfig = {
   nodeEnv: "test",
   port: 3000,
   databaseUrl: "postgresql://test:test@localhost:5432/skillbridge_test",
-  jwtSecret: undefined,
-  jwtExpiresIn: undefined,
+  jwtSecret: "12345678901234567890123456789012",
+  jwtExpiresIn: "15m",
   frontendUrl: "https://app.skillbridge.test",
 };
 

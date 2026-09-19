@@ -1,14 +1,16 @@
 import "dotenv/config";
 import { z } from "zod";
 
-const optionalString = z.preprocess(
-  (value) => (value === "" ? undefined : value),
-  z.string().min(1).optional(),
-);
-
 const optionalUrl = z.preprocess(
   (value) => (value === "" ? undefined : value),
   z.string().url().optional(),
+);
+
+export type JwtDuration = `${number}${"m" | "h" | "d"}`;
+
+const jwtDurationSchema = z.custom<JwtDuration>(
+  (value) => typeof value === "string" && /^[1-9][0-9]*(m|h|d)$/.test(value),
+  "JWT_EXPIRES_IN must use a duration such as 15m, 1h, or 1d",
 );
 
 const environmentSchema = z
@@ -16,8 +18,10 @@ const environmentSchema = z
     NODE_ENV: z.enum(["development", "test", "production"]),
     PORT: z.coerce.number().int().min(1).max(65_535),
     DATABASE_URL: z.string().min(1),
-    JWT_SECRET: optionalString,
-    JWT_EXPIRES_IN: optionalString,
+    JWT_SECRET: z.string().refine((secret) => Buffer.byteLength(secret, "utf8") >= 32, {
+      message: "JWT_SECRET must contain at least 32 UTF-8 bytes",
+    }),
+    JWT_EXPIRES_IN: jwtDurationSchema,
     FRONTEND_URL: optionalUrl,
   })
   .superRefine((environment, context) => {
@@ -34,8 +38,8 @@ export interface AppConfig {
   nodeEnv: "development" | "test" | "production";
   port: number;
   databaseUrl: string;
-  jwtSecret: string | undefined;
-  jwtExpiresIn: string | undefined;
+  jwtSecret: string;
+  jwtExpiresIn: JwtDuration;
   frontendUrl: string | undefined;
 }
 
