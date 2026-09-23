@@ -47,10 +47,11 @@ bright promotional gradients, and decorative type in product controls are
 anti-references. English is the initial UI language; no market-specific behavior or
 internationalization is implemented.
 
-The public `/` remains the Phase 1 coming-soon placeholder. Phase 2 adds generic
-primitives under `components/ui/`, verified through an isolated test fixture—not
-a product route or `/design`. The skill-pathway signature remains reserved for
-future domain progress/analytics; no domain components exist yet.
+The public `/` remains the Phase 1 coming-soon placeholder. Phase 2 generic
+primitives live under `components/ui/`; Phase 3 domain compositions live under
+`components/skillbridge/`. Both are verified through an isolated test fixture—not
+a product route or `/design`. Connected markers in SkillProgress and SkillGapCard
+introduce the restrained skill-pathway signature; no dashboard or analytics exists.
 
 The canonical runtime values live in `styles/tokens.css`. This document records
 intent and mirrors selected accepted values; it does not generate a second theme.
@@ -70,7 +71,7 @@ Runtime mapping:
 | primary/accent/highlight/background/ink | `--color-brand-*` | Placeholder, base canvas, text |
 | neutral text/surfaces/borders | `--color-text-*`, `--color-surface*`, `--color-border*` | Base styles, fields, cards, skeletons, placeholder |
 | semantic feedback | `--color-success`, `--color-warning`, `--color-error`, `--color-info` and `*-surface` | Badges, field errors, destructive action, ErrorState |
-| chart hues | `--chart-*` | Reserved tokens; no charts yet |
+| chart hues | `--chart-*` | Optional DashboardStatCard accents; no charts yet |
 
 Only a light theme is implemented. Forced colors use system focus and scrollbar
 colors. Decorative favicon artwork repeats the locked purple/yellow because it is
@@ -156,6 +157,40 @@ Input visual slots are decorative and must not contain focusable controls.
 | Select/Listbox | `components/ui/select.tsx` | Native single-select contract above | Native only | Unit selection; browser popup/keyboard/axe |
 | Form | `components/ui/field.tsx` + `field.module.css` | Label/help/error contract above | Input, Textarea, Select, Checkbox, RadioGroup | Relationship, ref, controlled/native behavior tests |
 
+### Domain compositions (Phase 3)
+
+`components/skillbridge/index.ts` exports the eleven product-specific compositions:
+SkillChip, MatchScore, ApplicationStatusBadge, OpportunityCard, SkillProgress,
+ProfileCompletion, DashboardStatCard, SkillGapCard, LearningRecommendationCard,
+CandidateMatchRow, and DeadlineItem. Their shared `domain.module.css` owns only
+domain layout and decoration; Button, IconButton, Badge, Card, ProgressBar, and
+Avatar remain the behavior/visual owners. No primitive or global token was changed.
+
+Cards remain flat, wrap full titles and skills, and never act as giant buttons.
+The default heading is h2, configurable to h3/h4 by the parent. Caller-owned
+`DomainAction` chooses a Button callback (including disabled/loading) or an actual
+text link. Accessible action names include the resource/person context by default.
+Removable SkillChip uses a 44px medium IconButton beside its compact badge.
+
+MatchScore presents an already calculated score: ≥90 excellent/success, ≥75
+strong/info, ≥60 moderate/warning, otherwise low/neutral. It always shows the
+number and label; the large variant adds the shared ProgressBar. No ranking or
+matching algorithm is present. Nonfinite percentages throw; finite values clamp
+to 0–100 consistently with ProgressBar. Fractional scores are classified before
+rounding (89.9 is still Strong), and MatchScore displays the supplied precision.
+
+Application status tones: saved/rejected neutral, applied/under review/interview
+info, shortlisted/selected success. Rejection is an outcome, not a system error.
+Learning priority is explicit text: high/warning, medium/info, low/neutral. Deadline
+urgency is upcoming/neutral, due soon/warning, overdue/error. Brand pink/yellow
+are not repurposed as outcome colors. Stats may use semantic/chart accent tokens;
+their label, value, and context carry meaning independently of the accent/icon.
+
+Dates, money, proficiency/readiness descriptions, counts, and urgency are supplied
+by the caller. Date props pair a machine-readable `dateTime` with a display label;
+components neither consult the clock nor invent time-zone/currency rules. No
+backend requests, external learning APIs, permissions, or navigation policy exist.
+
 Feature forms, validation policy, menus, overlays, and data navigation are not
 implemented. Consumers own validation timing, schemas, first-error focus, and async
 operations. There are no product workflows to connect yet.
@@ -174,7 +209,7 @@ Future charts must add text/shape distinctions and summaries, not rely on color.
 - Do keep text contrast, keyboard focus, responsive wrapping, and native semantics.
 - Do keep scrollbar themes global, visible, and compatible with forced colors.
 - Don't use Felipa for product information or pink/yellow for small light-surface text.
-- Don't add domain components, dashboard content, `/design`, or API integration in Phase 2.
+- Don't add a dashboard, `/design`, feature forms, or API integration in Phase 3.
 
 ### Phase 2 reconciliation
 
@@ -182,3 +217,11 @@ The locked palette, fonts, spacing/radii, and flat-surface direction are unchang
 The previous “components await review” boundary is intentionally replaced by this
 approved generic layer. Browser fixtures compare the primitives against the same
 production fonts/tokens as the existing placeholder; no second theme is introduced.
+
+### Phase 3 reconciliation
+
+The prior “no domain components” scope statement is updated for this approved
+phase. Flat surfaces, Inter, semantic color ownership, and the locked token values
+are preserved. The pathway motif now appears only in labelled skill progress/gaps;
+its connected dots are decorative, not a second progress implementation. The fixture
+extends the existing production-font test surface, without adding a Next route.

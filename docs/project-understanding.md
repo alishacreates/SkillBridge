@@ -10,7 +10,7 @@ needed to explain the design in a technical interview.
 - `backend/` contains the complete Express, TypeScript, Prisma, and PostgreSQL
   backend. Run npm and Prisma commands from this directory.
 - `frontend/` contains the Phase 1 Next.js App Router design foundation and a
-  coming-soon placeholder plus Phase 2 generic UI primitives; it has no dashboard
+  coming-soon placeholder, Phase 2 generic UI primitives, and Phase 3 domain components; it has no dashboard
   or API integration yet.
 - `docs/` contains repository-level architecture, API, setup, decision, and learning
   documentation.
@@ -96,8 +96,8 @@ loading and keyboard accessibility, before building reusable product components.
 
 A primitive is a reusable building block: a button knows how an action looks and
 behaves, not what the action means for SkillBridge. These blocks live in
-`frontend/components/ui/` and are exported by `index.ts`. No domain components have
-been built yet. The public homepage remains the Phase 1 placeholder.
+`frontend/components/ui/` and are exported by `index.ts`. Phase 3 composes them in
+`frontend/components/skillbridge/`. The public homepage remains the Phase 1 placeholder.
 
 The layer contains Button/IconButton, Input/Textarea/Select, Checkbox, RadioGroup,
 Badge, Card compositions, ProgressBar, Avatar, Skeleton, EmptyState, and ErrorState.
@@ -165,11 +165,120 @@ and includes the existing foundation/contrast checks.
 ### Interview: Why build primitives separately from domain components?
 
 “Generic primitives solve reusable interaction and visual problems: how a button
-disables, how a field announces an error, and how a card is spaced. Future domain
-components will compose them with SkillBridge-specific meaning. That keeps business
+disables, how a field announces an error, and how a card is spaced. Domain
+components compose them with SkillBridge-specific meaning. That keeps business
 concepts out of the reusable UI layer, makes accessibility fixes apply consistently,
-and lets domain behavior evolve without duplicating controls. At this stage I have
-implemented the primitives, not the domain layer.”
+and lets domain behavior evolve without duplicating controls.”
+
+## SkillBridge Domain Components — Phase 3
+
+### Beginner mental model: building blocks with product meaning
+
+A UI primitive is useful in many products: Card is a surface; Badge is labelled
+metadata; Button is an accessible action. A **domain component** combines those
+blocks into something meaningful in this product, such as an opportunity or a
+candidate. The domain layer lives in `frontend/components/skillbridge/` and exports
+its public components and props from `index.ts`.
+
+For example, `OpportunityCard` in `opportunity-card.tsx` composes:
+
+```text
+Card + Badge + SkillChip + MatchScore + Button (or a real link)
+  → OpportunityCard
+```
+
+The Card family owns surface, heading, content and footer structure. SkillChip adds
+skill/proficiency/verification text to Badge. MatchScore gives a number its match
+label. `DomainActionControl` in `domain-action.tsx` renders the caller's Button
+callback or link. The surrounding card is never a clickable div, so keyboard users
+can find a real, explicitly named action.
+
+### What actually exists
+
+Every path below is relative to `frontend/components/skillbridge/`:
+
+- `skill-chip.tsx`: `SkillChip` combines a compact Badge and optional IconButton.
+  “Git · Advanced · Verified” is meaningful without color. Removal is named
+  “Remove Git”; the parent owns removal state and focus after an item disappears.
+- `match-score.tsx`: `MatchScore` displays a percentage and semantic Badge; large
+  mode adds ProgressBar. `presentation.ts` contains `percentage` (finite input,
+  clamp 0–100) and `matchPresentation` (≥90 Excellent, ≥75 Strong, ≥60 Moderate,
+  otherwise Low). 89.9 is Strong, not rounded to Excellent.
+- `application-status-badge.tsx`: `ApplicationStatusBadge` maps the seven closed
+  status values to human labels and Badge tones. A rejected application is neutral,
+  not a system error. Rendering SELECTED does not perform any selection operation.
+- `opportunity-card.tsx`: `OpportunityCard` displays company, title, location,
+  work mode, stipend, duration, deadline, required skills, score, state, and action.
+- `skill-progress.tsx`: `SkillProgress` labels current and optional target values.
+  Connected decorative dots form the skill-pathway motif; supplied percentage uses
+  the generic ProgressBar. It does not assume “Intermediate” means a certain percent.
+- `profile-completion.tsx`: `ProfileCompletion` combines supplied percentage/counts
+  and optional next action. Its ProgressBar exposes “75%; 6 of 8 items complete”.
+- `dashboard-stat-card.tsx`: `DashboardStatCard` shows a label/value pair using a
+  description list, optional context, and optional decorative icon/accent. Having
+  this component does not mean there is a dashboard page or analytics backend.
+- `skill-gap-card.tsx`: `SkillGapCard` uses ProgressBar and separately labelled
+  strong/missing SkillChip lists. Empty lists get honest “No … supplied” text.
+- `learning-recommendation-card.tsx`: `LearningRecommendationCard` renders a skill,
+  resource title, difficulty, explicit priority, optional effort, and real action.
+  No external learning integration or recommendation engine exists.
+- `candidate-match-row.tsx`: `CandidateMatchRow` composes Avatar, identity/education
+  summary, top skills, match, status, and a contextual action such as “View profile
+  — Asha Patel”. It stacks on narrow screens without clipping important text.
+- `deadline-item.tsx`: `DeadlineItem` displays a semantic time element and explicit
+  Upcoming/Due soon/Overdue text. The caller supplies `{ dateTime, label }` and
+  urgency; it does not read the clock or silently shift time zones during hydration.
+
+### Presentation is not calculation or data fetching
+
+MatchScore receives `score={92}`. It knows how to present “92% — Excellent Match”,
+not how to compare a student with an opportunity. The future matching algorithm
+must account for business rules and data; putting it inside a visual component
+would couple those rules to every render and make backend/frontend results diverge.
+The only calculation here is display classification, not a matching algorithm.
+
+The same principle applies to readiness, profile counts, skill gaps and priorities.
+Parents pass already calculated, consistent data through typed props. A future page
+can change its data source without rewriting the cards, and tests can render exact
+edge cases without a database, network, or login. TypeScript catches wrong prop
+shapes at development time; it does not validate untrusted API responses at runtime.
+
+`DomainAction` allows either `href` or `onClick`, never both. Callback actions reuse
+Button's loading/disabled behavior; links use native anchor semantics and shared
+focus/hover styles. The parent controls pending state, success/error feedback,
+navigation policy, and permissions. Client callbacks belong in a Next Client
+Component; the domain renderers add no independent state or requests.
+
+### Styling, accessibility, and tests
+
+`domain.module.css` consumes the existing tokens and adds only domain composition:
+wrapping skill lists, metadata layout, candidate reflow, and restrained pathway
+markers. It never copies the Button/Badge/Card/Progress recipes or introduces raw
+brand hex values. Inter remains the product font. Full long titles and skills wrap;
+they are not removed behind ellipses. Text supplies meaning independently of color.
+Headed components accept h2/h3/h4 to fit the parent section's hierarchy.
+
+`presentation.test.tsx` tests score boundaries and all status mappings.
+`composition.test.tsx` tests real primitive composition, content/actions, accessible
+progress values, empty skill groups, priority labels, and keyboard activation.
+`frontend/test/fixtures/domain.tsx` supplies representative local examples to the
+existing isolated fixture; `frontend/e2e/domain.spec.ts` verifies browser layout,
+axe/contrast, focus, native links, loading, and forced-color/reduced-motion reflow.
+These tests do not prove API integration, a real matching algorithm, or a complete
+dashboard, because none of those is implemented.
+
+### Interview: How did you structure your frontend component system?
+
+“I separated three responsibilities: tokens, generic primitives, and product-specific
+compositions. `styles/tokens.css` owns visual values. `components/ui/` owns reusable
+semantics and interactions such as Button, Card, Badge, and ProgressBar.
+`components/skillbridge/` composes those into OpportunityCard, CandidateMatchRow,
+SkillGapCard, and other domain displays. They take typed, already calculated data
+and caller-owned actions, rather than fetching or implementing business algorithms.
+For example, MatchScore classifies a supplied score for display, but never computes
+the match. This makes the domain components independently testable and lets shared
+accessibility fixes propagate through one primitive. Pages and API integration are
+still deferred; the components are verified in an isolated fixture.”
 
 ## Authentication and Role-Based Authorization
 
@@ -639,7 +748,12 @@ middleware and controllers.
 ## Things I Should Be Able to Explain Without Notes
 
 - [ ] Explain the roles of `RootLayout`, `HomePage`, CSS Modules, and global styles.
-- [ ] Explain why primitives and future domain components belong in separate layers.
+- [ ] Explain why primitives and domain components belong in separate layers.
+- [ ] Trace Card + Badge + SkillChip + MatchScore + Button into OpportunityCard.
+- [ ] Explain why MatchScore presents calculated data rather than running matching logic.
+- [ ] Explain typed domain props, caller-owned actions, dates/urgency, and pending state.
+- [ ] Explain how domain separation improves maintainability and independent testing.
+- [ ] Explain textual score/status meaning, contextual action names, and responsive wrapping.
 - [ ] Trace `useField` IDs, label association, help/error wiring, and error cleanup.
 - [ ] Explain native choice/Select semantics and controlled versus uncontrolled fields.
 - [ ] Explain Button loading geometry, native disabled behavior, and IconButton naming.

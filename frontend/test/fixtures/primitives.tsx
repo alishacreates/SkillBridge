@@ -23,6 +23,7 @@ import {
 } from "../../components/ui";
 import "../../app/globals.css";
 import styles from "./primitives.module.css";
+import { DomainFixture } from "./domain";
 
 const variants = [
   "primary",
@@ -310,6 +311,7 @@ function PrimitiveFixture() {
           </Card>
         </div>
       </section>
+      <DomainFixture />
     </main>
   );
 }

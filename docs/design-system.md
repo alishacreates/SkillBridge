@@ -1,12 +1,13 @@
 # SkillBridge Design System
 
-## Current scope: Phases 1 and 2
+## Current scope: Phases 1–3
 
 Implemented: a standalone Next.js App Router package, strict TypeScript, font
 loading, canonical CSS tokens, global accessibility/base styles, and a responsive
-coming-soon homepage, plus generic UI primitives under `frontend/components/ui/`.
-No domain components, feature forms, dashboard, charts, `/design`, authentication
-UI, or API integration exists yet. Phase 2 stops at review of this reusable layer.
+coming-soon homepage, generic UI primitives under `frontend/components/ui/`, and
+SkillBridge domain compositions under `frontend/components/skillbridge/`.
+No feature forms, dashboard, charts, `/design`, authentication UI, or API integration
+exists yet. Phase 3 stops at review of the reusable domain layer.
 
 The approved specification is
 `docs/specs/2026-09-14-frontend-design-system-design.md`; its root-backend and full
@@ -270,3 +271,99 @@ Core button, field, progress, and feedback tests were observed failing against t
 initial minimal implementations before those behaviors were added. Extra icon,
 controlled-field, and browser-state checks were added as regression coverage;
 those were not all separate red-first cycles. No snapshot-only tests were used.
+
+## Domain components (Phase 3)
+
+Public exports: `frontend/components/skillbridge/index.ts`. Each component has a
+typed prop interface in its kebab-case `.tsx` file. Shared domain layout lives in
+`domain.module.css`; `presentation.ts` owns frontend-only literal types, proficiency
+labels, percentage bounding, and `matchPresentation`. No Prisma/backend imports or
+data fetching are introduced. These types describe display contracts, not a new API.
+
+| Component | Props and primitive composition |
+| --- | --- |
+| `SkillChip` | `name`, optional `proficiency` (BEGINNER/INTERMEDIATE/ADVANCED), `verified`, `onRemove`, `removeDisabled`. Badge carries explicit text; optional 44px IconButton is named “Remove {name}”. Omitted verification does not assert “unverified”. |
+| `MatchScore` | `score`, `size="compact"` (default) or `"large"`. Percentage and meaningful Badge, grouped under an accessible summary; large adds ProgressBar. ≥90 Excellent Match/success; ≥75 Strong/info; ≥60 Moderate/warning; below 60 Low/neutral. Fractional boundaries are not rounded up. |
+| `ApplicationStatusBadge` | Required closed `status` union. Badge maps SAVED → Saved, APPLIED → Applied, UNDER_REVIEW → Under review, SHORTLISTED → Shortlisted, INTERVIEW → Interview, SELECTED → Selected, REJECTED → Rejected. Saved/rejected neutral; applied/review/interview info; shortlisted/selected success. Rejected is not treated as a system error. |
+| `OpportunityCard` | `company`, `title`, `location`, `workMode`, display strings `stipend`/`duration`, `deadline`, `requiredSkills`, `matchScore`, optional `applicationStatus`, required `action`. Card/Header/Title/Content/Footer + Badge + SkillChip + MatchScore + action Button/link. Skills remain visible and wrap; empty list is explicitly labelled. |
+| `SkillProgress` | `skill`, `current` description, optional `target` description and `percentage`. Labelled current/target text uses connected decorative markers; a supplied percentage adds ProgressBar. It never invents progress from proficiency. |
+| `ProfileCompletion` | `percentage`, `completedItems`, `totalItems`, optional `nextAction`. Card + ProgressBar; accessible value text includes percentage and completed count. Counts and percentage are independent supplied data, not recomputed here. |
+| `DashboardStatCard` | `label`, `value` (string/number), optional `context`, decorative `icon`, `accent`. Card with native description-list semantics. Optional success/warning/error/info or chart-purple/pink/yellow/green/blue/cyan/orange accent colors the border/icon, not the meaning. No dashboard route is created. |
+| `SkillGapCard` | `targetRole`, `readiness`, `strongSkills`, `missingSkills`, optional `action`. Card + ProgressBar + SkillChip; separately named lists, explicit empty messages. It displays supplied gaps; it does not infer them from a role. |
+| `LearningRecommendationCard` | `skill`, `title`, `difficulty` (BEGINNER/INTERMEDIATE/ADVANCED), `priority` (HIGH/MEDIUM/LOW), optional `estimatedEffort`, required `action`. Card + SkillChip + Badge + action. High/warning, medium/info, low/neutral priority. No recommendation API is implied. |
+| `CandidateMatchRow` | `name`, optional `avatar` (`src`/`initials`), `summary` (degree/university), `topSkills`, `matchScore`, optional `applicationStatus`, required `action`. Card + Avatar + SkillChip + MatchScore + status Badge + action. Stacks on narrow screens; full summary and skills remain available. Avatar owns image-failure fallback. |
+| `DeadlineItem` | `title`, `context`, `date`, `type`, optional `status` and `urgency` (upcoming default/soon/overdue). CardTitle + Badge + semantic time element, with a quiet timeline border. Explicit labels Upcoming/Due soon/Overdue supplement color. Parent can place it inside an li; it does not create a list or clickable container. |
+
+Components with titles accept `headingLevel="h2" | "h3" | "h4"` (default h2).
+`Skill` is `{ name, proficiency?, verified? }`; skill names must be unique in each
+supplied list. `DisplayDate` is `{ dateTime, label }`: supply a valid ISO date or
+timestamp and an honestly formatted label (include the time zone if showing a time).
+Money and duration strings also arrive formatted; no locale/date library is added.
+Urgency is caller-owned and never changes by consulting the render-time clock.
+
+### Actions and state ownership
+
+`DomainAction` is a discriminated union by `href` presence:
+
+```tsx
+// A real destination supplied by a future consuming page:
+action={{ label: "View opportunity", href: opportunityUrl }}
+// A real operation supplied by a client owner:
+action={{ label: "Apply", onClick: handleApply, loading: pending, disabled: unavailable }}
+```
+
+`domain-action.tsx` exports the internal `DomainActionControl`: links remain native
+links using global link states, callbacks reuse Button including its default button
+type, disabled/loading semantics and reserved footprint. The two modes cannot be
+combined. Links have no fake disabled/loading state. By default the accessible name
+is “{label} — {context}”; optional `accessibleLabel` lets callers disambiguate further
+and should retain the visible label. No destination, router import, fetch, or action
+outcome is chosen by a domain component. Callback owners must be Client Components
+in Next.js; static display/link compositions do not require their own client state.
+
+Percentages follow the existing progress range policy: nonfinite values throw
+RangeError, finite values clamp to 0–100. MatchScore shows the bounded supplied
+precision, without rounding into a different label band. Generic ProgressBar rounds
+its visible percentage, while exposing the actual bounded value through ARIA.
+Callers own coherent counts/percentages, trusted resource links, calculated scores,
+profile data, and lifecycle transitions. Displaying a status is not authorization.
+
+### Domain testing and scope of evidence
+
+`components/skillbridge/presentation.test.tsx` covers score boundaries 59/60/74/75/
+89/90/100, a fractional score, clamping, nonfinite input, the large progress variant,
+and all seven status mappings. `composition.test.tsx` covers removal, full opportunity
+content, contextual link/callback actions, busy prevention, profile counts and ARIA,
+candidate keyboard activation, strong/missing/empty skill groups, optional progress,
+zero metrics, learning priorities, and deterministic date/urgency presentation.
+All 32 domain component tests were observed failing against null/minimal behavior
+before implementation; they exercise real primitives, not mocked component trees.
+
+`test/fixtures/domain.tsx` extends the same isolated Vite surface with representative
+data, explicit local action feedback, and an in-fixture link destination. It is not
+a product workflow. `e2e/domain.spec.ts` checks 390/768/1440px layouts, axe/contrast,
+browser errors, keyboard action names/focus, removal target size, loading footprint,
+link navigation, and 320px forced-colors/reduced-motion reflow. Existing foundation
+and primitive checks remain in the suite. Browser tests are additional regression
+coverage, not all separate red-first cycles. Automated axe/Chromium checks are not
+a claim of manual screen-reader or cross-browser certification.
+
+### Phase 3 verification record
+
+On 2026-09-23, lint, strict typecheck, all 52 component tests (32 new domain tests),
+production build, and all 15 Chromium tests (five new domain checks) passed.
+Axe reported no tested WCAG A/AA violations; the existing 22 token contrast pairs
+also passed. Domain checks covered 390/768/1440px plus 320px forced-colors reflow,
+console/page errors, keyboard actions, native link navigation, 44px removal targets,
+and stable busy geometry. Desktop/mobile, focus, loading, and forced-color
+screenshots were reviewed. The first browser run caught a 42px remove target;
+using the existing medium IconButton corrected it without changing the primitive.
+
+`git diff --check` passed. Backend/Prisma, generic primitives, and locked tokens
+have no changes. Production routes remain `/`, `/_not-found`, and `/icon.svg`;
+there is no dashboard or `/design`. DESIGN.md lint reported zero errors/warnings.
+The strict static scanner still exits 1 for the same four reviewed Phase 2 findings
+documented above, with no new domain findings. Builds require network access for
+the existing next/font configuration; the sandboxed font fetch failed, then the
+network-enabled build passed. Playwright emits the existing NO_COLOR/FORCE_COLOR
+environment warning. No new dependency or application integration was added.
