@@ -1,11 +1,12 @@
-# Backend Architecture
+# Project Architecture
 
-SkillBridge is an Express 5 and strict-TypeScript modular monolith. Its implemented
-HTTP surface currently consists of infrastructure health checks plus registration,
+SkillBridge has an Express 5 and strict-TypeScript modular-monolith backend and a
+separate Next.js frontend. The backend's implemented HTTP surface consists of
+infrastructure health checks plus registration,
 login, Bearer authentication, role authorization middleware, and current-user
-retrieval. The backend is self-contained under `backend/`; `frontend/` is reserved
-for the upcoming Next.js application, and repository-level documentation remains in
-`docs/`.
+retrieval. The backend is self-contained under `backend/`; `frontend/` contains the
+Next.js design foundation and Phase 2 primitives, and documentation remains in
+`docs/`. The frontend does not call the backend yet.
 
 ## Request flow
 
@@ -58,7 +59,15 @@ SkillBridge/
 │   ├── package.json
 │   ├── prisma.config.ts
 │   └── tsconfig*.json
-├── frontend/                # Reserved; no frontend implementation yet
+├── frontend/
+│   ├── app/                 # App Router document shell and placeholder homepage
+│   ├── styles/              # Canonical tokens and global base styles
+│   ├── components/ui/       # Product-agnostic primitives and component tests
+│   ├── test/fixtures/       # Isolated browser fixture; not a Next route
+│   ├── e2e/                 # Production browser smoke checks
+│   ├── DESIGN.md            # Visual intent and token ownership
+│   ├── package.json         # Independent frontend commands/dependencies
+│   └── playwright.config.ts # Browser verification server/configuration
 └── docs/                    # Repository-level living documentation
 ```
 
@@ -74,3 +83,26 @@ Prisma; a ten-second timeout prevents shutdown from hanging indefinitely.
 
 Non-operational errors such as a missing required role profile are logged outside
 tests and exposed only as the generic `500 INTERNAL_SERVER_ERROR` envelope.
+
+## Frontend foundation (Phase 1)
+
+`frontend/app/layout.tsx` owns the HTML document, metadata, Inter/Felipa font
+variables, global styles, and skip navigation. `frontend/app/page.tsx` is a static
+Server Component rendering a coming-soon placeholder. Hook-using generic primitives
+declare client boundaries, but no API calls, auth UI, dashboard, or `/design` route
+exist yet. `components/ui/` exposes native controls and display/feedback components;
+it cannot import domain/page/backend code. Domain components are not implemented.
+
+Style flow: `styles/tokens.css` -> `styles/base.css` and `app/page.module.css` ->
+rendered page. `app/globals.css` imports tokens/base once. Runtime CSS variables are
+canonical; `frontend/DESIGN.md` explains intent and `docs/design-system.md` records
+values, accessibility rules, and current scope. Fonts are self-hosted by Next after
+build-time download. CSS Modules keep placeholder-specific rules local.
+
+Frontend commands run in `frontend/`; development/production servers default to
+3001. Strict TypeScript and the Next/TypeScript ESLint presets are configured.
+`npm run typecheck` generates App Router types before running `tsc --noEmit`.
+Vitest/Testing Library checks component behavior. Playwright checks the compiled
+placeholder plus an isolated Vite primitive fixture with axe and interaction tests.
+The fixture is outside App Router and reuses production fonts through a local proxy.
+Domain composition and backend integration remain separate phases.

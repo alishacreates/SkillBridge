@@ -9,13 +9,167 @@ needed to explain the design in a technical interview.
 
 - `backend/` contains the complete Express, TypeScript, Prisma, and PostgreSQL
   backend. Run npm and Prisma commands from this directory.
-- `frontend/` is reserved for the upcoming Next.js frontend; it contains no
-  application code yet.
+- `frontend/` contains the Phase 1 Next.js App Router design foundation and a
+  coming-soon placeholder plus Phase 2 generic UI primitives; it has no dashboard
+  or API integration yet.
 - `docs/` contains repository-level architecture, API, setup, decision, and learning
   documentation.
 
 Backend source paths in this guide therefore begin with `backend/src/`, and the
 database schema lives at `backend/prisma/schema.prisma`.
+
+## Frontend Design Foundation — Phase 1
+
+The frontend now has a small, independently runnable Next.js application. It proves
+that the brand, fonts, responsive page layout, and accessibility defaults work before
+we build controls or a dashboard. The Express backend is still a separate package.
+
+### How the page is assembled
+
+`frontend/app/layout.tsx` exports `RootLayout`, the shared HTML/body wrapper, and
+metadata. It sets `lang="en"`, loads both fonts, imports `app/globals.css`, and adds a
+skip link. `frontend/app/page.tsx` exports `HomePage` for `/`. These are Server
+Components; no `use client` boundary or browser state is needed for static copy.
+
+`frontend/app/page.module.css` contains styles scoped to the placeholder. Global
+CSS follows one path: `app/globals.css` imports `styles/tokens.css`, then
+`styles/base.css`. The base stylesheet sets box sizing, body type/background,
+headings, links, focus, selection, scrollbar colors, and accessibility overrides.
+
+### What a design token does
+
+A token is a named design decision. For example, `--color-canvas` refers to the
+locked pale-green background and `--space-6` is 1.5rem. Page CSS consumes
+`var(--color-canvas)` or `var(--space-6)` instead of choosing its own values. Changing
+the shared token updates its consumers together. CSS Modules prevent local class
+names from colliding; they still share the same global CSS variables.
+
+The runtime owner is `frontend/styles/tokens.css`. It defines brand, neutral,
+semantic, chart, typography, spacing, radius, shadow, focus, motion, scrollbar, and
+layout tokens. Semantic success/error hues are separate from decorative brand
+accents. Chart tokens are defined for later use; no chart exists yet.
+
+### Font loading and typography
+
+`Inter` and `Felipa` are imported from `next/font/google` in `RootLayout`. Next
+downloads font files at build time and serves them locally. The root font variables
+feed `--font-body` and `--font-decorative` in the token stylesheet. Inter is used for
+all UI text. Only `.brandNote` in `app/page.module.css` uses Felipa, for the short
+decorative line. The fonts use `display: swap` so readable fallback text can appear
+while the font finishes loading.
+
+### Responsive and accessible defaults
+
+The page uses a growing flex column with natural document scrolling. Gutters are
+16px on mobile, 24px from 48rem, and 32px from 64rem; the shell stops growing at
+72rem. Fluid headings wrap within the available width. There is no hidden overflow
+to conceal layout mistakes.
+
+The skip link takes keyboard users directly to `main#main-content`, avoiding the
+header. `:focus-visible` gives keyboard focus a 3px outline. Reduced-motion settings
+suppress animations/transitions; forced colors preserve a system-colored outline.
+Color accents are decorative, so no instruction depends only on pink or yellow.
+These defaults support accessibility, but future interactive components will need
+their own labels, keyboard behavior, state handling, and contrast checks.
+
+### Running and explaining the foundation
+
+From `frontend/`, use `npm install`, `npm run dev` (port 3001), `npm run lint`,
+`npm run typecheck`, and `npm run build`. Typechecking first generates Next route
+types. A production browser check is `npm run test:e2e` after building and installing
+Chromium with `npx playwright install chromium`.
+
+`frontend/e2e/foundation.spec.ts` checks real fonts, rendered colors, layout width,
+skip focus, console errors, reduced motion, and forced colors. It does not test
+backend integration because none is implemented. `frontend/DESIGN.md` preserves
+intent; `docs/design-system.md` is the detailed token and usage reference.
+
+Interview answer: “I separated the frontend package from Express, used App Router
+Server Components for the initial static shell, and centralized design decisions in
+CSS variables. CSS Modules consume those tokens without leaking local styles. I
+verified the production page at mobile, tablet, and desktop widths, including font
+loading and keyboard accessibility, before building reusable product components.”
+
+## Core UI Primitives — Phase 2
+
+### Beginner mental model
+
+A primitive is a reusable building block: a button knows how an action looks and
+behaves, not what the action means for SkillBridge. These blocks live in
+`frontend/components/ui/` and are exported by `index.ts`. No domain components have
+been built yet. The public homepage remains the Phase 1 placeholder.
+
+The layer contains Button/IconButton, Input/Textarea/Select, Checkbox, RadioGroup,
+Badge, Card compositions, ProgressBar, Avatar, Skeleton, EmptyState, and ErrorState.
+They accept content and callbacks rather than calling APIs or choosing destinations.
+
+### How interactions and accessibility are shared
+
+`button.tsx` exports `Button`, a real HTML button. It defaults to `type="button"`
+so placing it in a future form does not accidentally submit. Callers can opt into
+submit/reset. Primary/secondary/outline/ghost/destructive are visual variants;
+sm/md/lg change density. `loading` sets native disabled and `aria-busy`; the visible
+text/spinner overlaps the reserved content footprint so nearby controls do not jump.
+Disabled buttons also have dashed borders and a noninteractive cursor. `IconButton`
+delegates to Button and requires a textual `label` even though it displays an icon.
+
+`field.tsx` exports internal helpers `useField`, `FieldLabel`, and `FieldMessages`.
+`useField` takes a supplied ID or creates one with React `useId`, then derives help
+and error IDs. Input, Textarea, Select, Checkbox, and RadioGroup share that wiring.
+Labels point at native controls; `aria-describedby` connects help/error text. Errors
+include text and `aria-invalid`, not just a red border. IDs stay stable across
+rerenders/hydration; random IDs would break this. Caller descriptions are preserved,
+and stale error relationships disappear when the error is removed.
+
+Native controls provide keyboard behavior we do not reinvent: Space toggles a
+checkbox; same-name radio inputs support arrows; fieldset/legend names the group;
+select supplies its platform popup. The Select wrapper does not pretend to control
+OS popup geometry. Textarea resizes vertically without widening the layout.
+React 19 refs reach the actual native control for future focus management.
+Controlled fields get value/onChange from their parent; uncontrolled fields use
+defaultValue/defaultChecked. The wrappers do not own schemas or submission logic.
+
+### Display and feedback without business meaning
+
+`badge.tsx` renders caller-supplied metadata in six tones, without mapping application
+statuses. `card.tsx` exports Card/Header/Title/Description/Content/Footer: a flat,
+bordered composition, not a clickable div. CardTitle supports h2/h3/h4 to preserve
+the consuming page's heading hierarchy.
+
+`progress-bar.tsx` renders labelled native progress with value/min/max (0–100 by
+default). It clamps values to bounds and rejects nonfinite/invalid ranges. ARIA
+exposes the actual range; visible text shows percentage. It does not know readiness
+terminology. `avatar.tsx` reserves image space, shows supplied/derived initials on
+failure, and resets failure state when src changes. An empty alt marks it decorative
+when adjacent text already supplies the identity.
+
+`feedback.tsx` provides EmptyState/ErrorState with optional real actions and chosen
+heading levels. Error announcements are opt-in. Skeleton is decorative; its owner
+provides an accessible busy-region description, and reduced motion makes it static.
+
+### Styling and verification
+
+CSS Modules consume `styles/tokens.css`: purple emphasis, semantic error tones,
+strong control borders, and existing spacing/radius/focus values. Felipa is never
+used in primitives. There are no raw brand-color copies or inline visual styles.
+ESLint restricts domain/page/backend imports into the generic UI layer.
+
+`components/ui/button.test.tsx`, `fields.test.tsx`, and `display.test.tsx` test real
+behavior with Vitest/Testing Library. `e2e/primitives.spec.ts` uses Chromium and axe
+for keyboard actions, rendered states/contrast, responsiveness, and reduced motion.
+The fixture in `test/fixtures/` is outside Next routing; it reuses production fonts
+and is not `/design` or a shipped product screen. From `frontend/`, `npm test` runs
+component tests; after `npm run build`, `npm run test:e2e` starts the test servers
+and includes the existing foundation/contrast checks.
+
+### Interview: Why build primitives separately from domain components?
+
+“Generic primitives solve reusable interaction and visual problems: how a button
+disables, how a field announces an error, and how a card is spaced. Future domain
+components will compose them with SkillBridge-specific meaning. That keeps business
+concepts out of the reusable UI layer, makes accessibility fixes apply consistently,
+and lets domain behavior evolve without duplicating controls. At this stage I have
+implemented the primitives, not the domain layer.”
 
 ## Authentication and Role-Based Authorization
 
@@ -483,6 +637,17 @@ and unsafe casts while keeping authentication context available to downstream
 middleware and controllers.
 
 ## Things I Should Be Able to Explain Without Notes
+
+- [ ] Explain the roles of `RootLayout`, `HomePage`, CSS Modules, and global styles.
+- [ ] Explain why primitives and future domain components belong in separate layers.
+- [ ] Trace `useField` IDs, label association, help/error wiring, and error cleanup.
+- [ ] Explain native choice/Select semantics and controlled versus uncontrolled fields.
+- [ ] Explain Button loading geometry, native disabled behavior, and IconButton naming.
+- [ ] Explain what component tests, axe, and fixture browser checks do and do not prove.
+- [ ] Trace a design token from `frontend/styles/tokens.css` to the rendered page.
+- [ ] Explain how `next/font` serves Inter/Felipa and why their roles are different.
+- [ ] Explain skip navigation, focus-visible, reduced motion, and forced colors.
+- [ ] Explain what Phase 1 browser checks cover and which features remain deferred.
 
 - [ ] Trace `POST /api/auth/register` from route and Zod validation through
   `register`, `registerUser`, bcrypt, and the Prisma transaction.

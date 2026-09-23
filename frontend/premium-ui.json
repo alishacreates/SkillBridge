@@ -1,0 +1,16 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["app", "styles", "components"],
+  "locale": "en",
+  "canonicalMap": "DESIGN.md",
+  "requiredCapabilities": ["Scrollbar", "Select/Listbox", "Form"],
+  "ownership": { "Select/Listbox": "native" },
+  "requiredCommands": ["lint", "typecheck", "unit", "build", "browser"],
+  "commands": {
+    "lint": "npm run lint",
+    "typecheck": "npm run typecheck",
+    "unit": "npm test",
+    "build": "npm run build",
+    "browser": "npm run test:e2e"
+  }
+}

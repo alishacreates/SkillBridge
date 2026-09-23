@@ -145,3 +145,50 @@ The following decisions are active in the implemented authentication surface.
   shared external database.
 - **Tradeoff:** They do not prove physical PostgreSQL rollback. That property requires
   a separate disposable-database integration test, which is not currently present.
+
+## Frontend Phase 1 decisions
+
+### Standalone Next.js App Router package
+
+- **Decision:** Next.js 16 and React 19 in `frontend/`, with strict TypeScript and
+  Server Components for the initial layout and placeholder. Use port 3001 locally.
+- **Reason:** Establish routing, font loading, metadata, and a build boundary without
+  coupling the UI to the Express runtime or its default port 3000.
+- **Alternative:** A client-only SPA or a combined backend/frontend package.
+- **Tradeoff:** Separate install/build commands; dynamic UI and API integration need
+  deliberate future boundaries. Phase 1 implements no authentication UI.
+
+### CSS Modules plus one runtime token stylesheet
+
+- **Decision:** Use the CSS Modules/global CSS approach in the approved frontend
+  plan. `frontend/styles/tokens.css` is the single runtime source; `frontend/DESIGN.md`
+  records visual intent and `docs/design-system.md` explains usage.
+- **Reason:** Native CSS custom properties support semantic aliases, responsive
+  values, and motion preferences without a second theme system.
+- **Alternatives:** Tailwind or a CSS-in-JS theme provider.
+- **Tradeoff:** Components will author explicit CSS rules and must consume the shared
+  tokens. Media-query breakpoints remain literals, as CSS variables cannot supply
+  media-query thresholds.
+
+### Font roles and accessible palette use
+
+- **Decision:** Self-host Inter and Felipa through `next/font/google`. Inter covers
+  all product UI; Felipa is limited to the placeholder's short decorative brand line.
+  Preserve the five locked brand colors; define semantic/chart colors independently.
+- **Reason:** Keep product text readable and predictable while retaining a small
+  recognizable brand accent. Brand pink/yellow are not suitable default small-text
+  colors on the pale canvas.
+- **Alternative:** Browser-loaded Google Fonts stylesheets or decorative headings
+  throughout the product.
+- **Tradeoff:** A fresh production build needs access to Google font downloads;
+  rendered pages serve fonts locally. Every future text/background pair still needs
+  contrast verification.
+
+### Phase boundary
+
+- **Decision:** `/` is a coming-soon placeholder for Phase 1. The older full design
+  spec describes later dashboard/showcase work, not currently shipped features.
+- **Reason:** Review the font, token, layout, and accessibility foundation before
+  implementing reusable controls or domain UI.
+- **Tradeoff:** No `/design`, dashboard, chart, form, or API integration is available
+  yet. The skill-pathway motif remains reserved for later progress/analytics work.

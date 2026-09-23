@@ -6,14 +6,15 @@ documentation areas.
 ```text
 SkillBridge/
 ├── backend/    # Express, TypeScript, Prisma, and PostgreSQL backend
-├── frontend/   # Reserved for the upcoming Next.js frontend
+├── frontend/   # Next.js App Router: Phase 1 design foundation
 └── docs/       # Architecture, API, setup, and project-learning documentation
 ```
 
-The implemented application currently lives entirely in `backend/`. Its HTTP
+The backend application lives in `backend/`. Its HTTP
 surface contains infrastructure health checks plus registration, login, Bearer
-authentication, reusable role authorization, and current-user retrieval. Frontend
-and business feature routes are not implemented yet.
+authentication, reusable role authorization, and current-user retrieval. The
+frontend currently renders a standalone coming-soon page with design tokens and
+fonts; it has no API integration, authentication UI, or business features yet.
 
 ## Backend quick start
 
@@ -27,10 +28,24 @@ npm run prisma:generate
 npm run dev
 ```
 
+## Frontend quick start
+
+Run frontend commands from `frontend/` (a separate terminal from the backend):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:3001`. No frontend environment variables are needed for
+Phase 1. See [the design foundation](docs/design-system.md) for verification commands.
+
 ## Project documentation
 
 - [Setup and commands](docs/setup.md)
-- [Backend architecture](docs/architecture.md)
+- [Project architecture](docs/architecture.md)
+- [Frontend design foundation](docs/design-system.md)
 - [API endpoints](docs/api.md)
 - [Database model](docs/database.md)
 - [Architecture decisions](docs/decisions.md)

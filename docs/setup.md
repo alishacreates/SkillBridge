@@ -53,3 +53,15 @@ health endpoint. Prisma reads `backend/prisma.config.ts`, and its schema and see
 
 `JWT_SECRET` should be replaced with a securely generated deployment secret. Access
 tokens use the configured duration; refresh tokens and sessions are not implemented.
+
+## Frontend (separate package)
+
+The frontend requires Node.js 20.19 or newer and no environment variables.
+From the repository root, run `cd frontend`, `npm install`, then `npm run dev`
+(port 3001). Quality checks are `npm run lint`, `npm run typecheck`, `npm test`, and
+`npm run build`. After building, `npm start` serves the production application.
+For browser checks, first install Chromium with `npx playwright install chromium`,
+then run `npm run test:e2e`; this starts and stops production Next on port 3101 and
+the isolated primitive fixture server on port 3102. `npm run test:fixtures` starts
+only the fixture and requires the built Next app already running on port 3101.
+See [the design-system guide](design-system.md) for styling and font setup.
