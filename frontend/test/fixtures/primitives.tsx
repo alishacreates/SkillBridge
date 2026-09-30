@@ -24,6 +24,7 @@ import {
 import "../../app/globals.css";
 import styles from "./primitives.module.css";
 import { DomainFixture } from "./domain";
+import { DashboardStatesFixture } from "./dashboard-states";
 
 const variants = [
   "primary",
@@ -312,6 +313,7 @@ function PrimitiveFixture() {
         </div>
       </section>
       <DomainFixture />
+      <DashboardStatesFixture />
     </main>
   );
 }

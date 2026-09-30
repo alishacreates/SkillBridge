@@ -47,11 +47,12 @@ bright promotional gradients, and decorative type in product controls are
 anti-references. English is the initial UI language; no market-specific behavior or
 internationalization is implemented.
 
-The public `/` remains the Phase 1 coming-soon placeholder. Phase 2 generic
-primitives live under `components/ui/`; Phase 3 domain compositions live under
-`components/skillbridge/`. Both are verified through an isolated test fixture—not
-a product route or `/design`. Connected markers in SkillProgress and SkillGapCard
-introduce the restrained skill-pathway signature; no dashboard or analytics exists.
+The public `/` is the Phase 4 student dashboard with explicitly fictional local
+data. `components/dashboard/` composes Phase 2 primitives in `components/ui/` and
+Phase 3 domain components in `components/skillbridge/`. The isolated test fixture
+still verifies reusable components and alternate states; it is not `/design`.
+Connected markers in SkillProgress and SkillGapCard provide the restrained pathway
+signature. No backend integration or calculated analytics exists.
 
 The canonical runtime values live in `styles/tokens.css`. This document records
 intent and mirrors selected accepted values; it does not generate a second theme.
@@ -68,10 +69,10 @@ Runtime mapping:
 
 | Document role | Runtime owner | Current consumer |
 | --- | --- | --- |
-| primary/accent/highlight/background/ink | `--color-brand-*` | Placeholder, base canvas, text |
-| neutral text/surfaces/borders | `--color-text-*`, `--color-surface*`, `--color-border*` | Base styles, fields, cards, skeletons, placeholder |
+| primary/accent/highlight/background/ink | `--color-brand-*` | Dashboard, base canvas, text |
+| neutral text/surfaces/borders | `--color-text-*`, `--color-surface*`, `--color-border*` | Base styles, fields, cards, skeletons, dashboard shell |
 | semantic feedback | `--color-success`, `--color-warning`, `--color-error`, `--color-info` and `*-surface` | Badges, field errors, destructive action, ErrorState |
-| chart hues | `--chart-*` | Optional DashboardStatCard accents; no charts yet |
+| chart hues | `--chart-*` | DashboardStatCard accents; readiness trend and labelled match distribution |
 
 Only a light theme is implemented. Forced colors use system focus and scrollbar
 colors. Decorative favicon artwork repeats the locked purple/yellow because it is
@@ -85,19 +86,20 @@ build time and serves them locally. Fonts are bound to `--font-inter` and
 `--font-felipa` on the root element; `--font-body` and `--font-decorative` adapt them.
 
 Inter owns all product text, headings, data, navigation, and labels. Felipa appears
-only in the short decorative `.brandNote` line on the Phase 1 placeholder. This
-phase-specific brand specimen replaces the later welcome/showcase specimen while
-those routes are deferred. Felipa must never become a global heading or body font.
+only in the short decorative `.brandNote` welcome phrase in
+`components/dashboard/dashboard.module.css`. It repeats no essential information
+and is hidden from assistive technology. Felipa is never a global heading or body font.
 Type sizes, line heights, weights, and heading tracking come from `--type-*` and
 `--font-weight-*` tokens. Body text is 16px at the browser's default root size.
 
 ## Layout
 
-Document scrolling remains natural. The root shell has a 72rem maximum width and
-16/24/32px gutters at base/48rem/64rem viewport widths. Future product content may
-use the approved 90rem maximum and 15rem sidebar tokens; no sidebar exists yet.
-Text uses a 38rem maximum measure, a fluid display heading, and no fixed content
-height. The shell can grow when text wraps or users increase text size.
+Document scrolling remains natural. Dashboard content uses the 90rem maximum and
+16/24/32px gutters at base/48rem/64rem. The 15rem sidebar appears at 64rem; narrower
+viewports use an in-flow navigation disclosure, not an overlay. A 12-column grid
+uses 7/5 and 8/4 section splits at 80rem. Metrics use one/two/four columns at
+base/48rem/80rem. Text uses a 38rem copy measure and fluid headings; content has no
+fixed height. The sidebar alone can scroll if the viewport is short.
 
 Spacing follows the approved 4, 8, 12, 16, 24, 32, 48, 64px scale (rem tokens).
 Media-query breakpoints are literals because CSS custom properties cannot be used
@@ -105,9 +107,9 @@ as media-query thresholds.
 
 ## Elevation & Depth
 
-The placeholder is flat, with border separators. Three subtle shadow tokens are
-available for later elevated surfaces; they are not applied gratuitously to the
-current content. The focus halo separates the purple outline from its surroundings.
+Dashboard surfaces remain flat and bordered. Three subtle shadow tokens remain
+available without making every card float. The focus halo separates the purple
+outline from its surroundings.
 
 ## Shapes
 
@@ -122,7 +124,7 @@ All generic primitives live in `components/ui/`; none import page or domain modu
 They use Inter and CSS Modules consuming `styles/tokens.css`. A local
 `no-restricted-imports` lint rule protects the domain/page/backend boundary.
 Focus uses a 3px purple outline, 3px offset, and white halo; forced colors use
-`Highlight` from the shared baseline. The public placeholder stays unchanged.
+`Highlight` from the shared baseline. Page composition reuses these owners unchanged.
 
 - Button: primary, secondary, outline, ghost, destructive; sm/md/lg. Native button,
   default `type="button"`. Loading uses equal-footprint overlapping content, visible
@@ -191,9 +193,36 @@ by the caller. Date props pair a machine-readable `dateTime` with a display labe
 components neither consult the clock nor invent time-zone/currency rules. No
 backend requests, external learning APIs, permissions, or navigation policy exist.
 
-Feature forms, validation policy, menus, overlays, and data navigation are not
-implemented. Consumers own validation timing, schemas, first-error focus, and async
-operations. There are no product workflows to connect yet.
+Feature forms, authentication, overlays, and remote-data workflows are not
+implemented. Consumers own future validation timing, schemas, first-error focus,
+and async operations. The Phase 4 menu and local preview contracts are below.
+
+### Dashboard composition (Phase 4)
+
+`layout/dashboard-shell.tsx` owns the desktop sidebar, responsive header, and
+mobile disclosure. Only Dashboard is a route (`/`, `aria-current="page"`); other
+destinations are text labelled Coming soon. Notifications use a disabled IconButton
+with visible availability text. The avatar is decorative beside the named identity.
+The menu focuses its Dashboard link on opening, closes on Escape, restores trigger
+focus, and resets when resizing to desktop. It is nonmodal: no trap or overlay.
+
+`components/dashboard/student-dashboard.tsx` composes existing domain cards and
+progress/status displays. `dashboard-data.ts` is a fixed, typed September 2026
+snapshot, not a clock-driven or live feed. Search uses Input/IconButton in a native
+form: submit filters company/title/skill in the three local opportunities; clear
+resets both draft/results and returns input focus. IME composition is guarded.
+Search is transient page state, not persisted URL/global state.
+
+Opportunity and learning actions open real inline sample details/topic lists via
+`SamplePreview`; focus moves to its heading and returns to the triggering action
+on close. No application or course connection is implied. Skill-gap/profile links
+target existing page content. `RecommendationsSection` exposes ready/loading/empty/
+error props for the fixture; recovery restores local data, never a simulated request.
+
+`MatchOverview` uses lightweight SVG with chart tokens, visible checkpoint values,
+counts, ranges, and explanatory text. The trend SVG has a complete accessible name;
+distribution bars are decorative beside equivalent text. No chart dependency,
+matching algorithm, new token, or parallel component system was introduced.
 
 ### Motion and content
 
@@ -201,7 +230,7 @@ Durations are 120/200/320ms with `cubic-bezier(0.2, 0, 0, 1)`. The current page 
 no entrance or ambient animation. Reduced-motion preferences zero the duration
 tokens and suppress animation, transitions, and smooth scrolling globally.
 Use plain, honest copy; do not present unavailable features as working actions.
-Future charts must add text/shape distinctions and summaries, not rely on color.
+Charts include values and summaries rather than relying on color.
 
 ## Do's and Don'ts
 
@@ -209,7 +238,7 @@ Future charts must add text/shape distinctions and summaries, not rely on color.
 - Do keep text contrast, keyboard focus, responsive wrapping, and native semantics.
 - Do keep scrollbar themes global, visible, and compatible with forced colors.
 - Don't use Felipa for product information or pink/yellow for small light-surface text.
-- Don't add a dashboard, `/design`, feature forms, or API integration in Phase 3.
+- Don't add `/design`, feature forms, new product routes, or API integration in Phase 4.
 
 ### Phase 2 reconciliation
 
@@ -225,3 +254,10 @@ phase. Flat surfaces, Inter, semantic color ownership, and the locked token valu
 are preserved. The pathway motif now appears only in labelled skill progress/gaps;
 its connected dots are decorative, not a second progress implementation. The fixture
 extends the existing production-font test surface, without adding a Next route.
+
+### Phase 4 reconciliation
+
+The approved dashboard replaces the placeholder at `/`; the unused placeholder CSS
+was removed. The existing tokens, fonts, primitives, and domain implementation stay
+unchanged. Page-only CSS owns layout/chart geometry; shared components retain all
+control and status behavior. The fixture gains alternate recommendation states.

@@ -1,6 +1,6 @@
 {
   "profile": "product-admin",
-  "sourceRoots": ["app", "styles", "components"],
+  "sourceRoots": ["app", "styles", "components", "layout"],
   "locale": "en",
   "canonicalMap": "DESIGN.md",
   "requiredCapabilities": ["Scrollbar", "Select/Listbox", "Form"],

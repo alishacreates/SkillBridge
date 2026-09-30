@@ -9,9 +9,8 @@ needed to explain the design in a technical interview.
 
 - `backend/` contains the complete Express, TypeScript, Prisma, and PostgreSQL
   backend. Run npm and Prisma commands from this directory.
-- `frontend/` contains the Phase 1 Next.js App Router design foundation and a
-  coming-soon placeholder, Phase 2 generic UI primitives, and Phase 3 domain components; it has no dashboard
-  or API integration yet.
+- `frontend/` contains the Next.js design foundation, generic primitives, domain
+  components, and Phase 4 student dashboard. It uses local data, not backend APIs.
 - `docs/` contains repository-level architecture, API, setup, decision, and learning
   documentation.
 
@@ -20,18 +19,19 @@ database schema lives at `backend/prisma/schema.prisma`.
 
 ## Frontend Design Foundation — Phase 1
 
-The frontend now has a small, independently runnable Next.js application. It proves
-that the brand, fonts, responsive page layout, and accessibility defaults work before
-we build controls or a dashboard. The Express backend is still a separate package.
+Phase 1 established an independently runnable Next.js foundation for brand, fonts,
+responsive layout, and accessibility defaults. Later phases add controls and the
+dashboard described below. The Express backend is still a separate package.
 
 ### How the page is assembled
 
 `frontend/app/layout.tsx` exports `RootLayout`, the shared HTML/body wrapper, and
 metadata. It sets `lang="en"`, loads both fonts, imports `app/globals.css`, and adds a
-skip link. `frontend/app/page.tsx` exports `HomePage` for `/`. These are Server
-Components; no `use client` boundary or browser state is needed for static copy.
+skip link. `frontend/app/page.tsx` exports `HomePage` for `/`. These remain Server
+Components; HomePage now renders the client-side `StudentDashboard` composition.
 
-`frontend/app/page.module.css` contains styles scoped to the placeholder. Global
+The old placeholder's `app/page.module.css` was retired in Phase 4; dashboard and
+layout CSS Modules now own page-specific rules. Global
 CSS follows one path: `app/globals.css` imports `styles/tokens.css`, then
 `styles/base.css`. The base stylesheet sets box sizing, body type/background,
 headings, links, focus, selection, scrollbar colors, and accessibility overrides.
@@ -47,22 +47,22 @@ names from colliding; they still share the same global CSS variables.
 The runtime owner is `frontend/styles/tokens.css`. It defines brand, neutral,
 semantic, chart, typography, spacing, radius, shadow, focus, motion, scrollbar, and
 layout tokens. Semantic success/error hues are separate from decorative brand
-accents. Chart tokens are defined for later use; no chart exists yet.
+accents. Chart tokens now supply the Phase 4 readiness/distribution visualization.
 
 ### Font loading and typography
 
 `Inter` and `Felipa` are imported from `next/font/google` in `RootLayout`. Next
 downloads font files at build time and serves them locally. The root font variables
 feed `--font-body` and `--font-decorative` in the token stylesheet. Inter is used for
-all UI text. Only `.brandNote` in `app/page.module.css` uses Felipa, for the short
+all UI text. Only `.brandNote` in `components/dashboard/dashboard.module.css` uses Felipa, for the short
 decorative line. The fonts use `display: swap` so readable fallback text can appear
 while the font finishes loading.
 
 ### Responsive and accessible defaults
 
-The page uses a growing flex column with natural document scrolling. Gutters are
-16px on mobile, 24px from 48rem, and 32px from 64rem; the shell stops growing at
-72rem. Fluid headings wrap within the available width. There is no hidden overflow
+The page uses natural document scrolling. Gutters are
+16px on mobile, 24px from 48rem, and 32px from 64rem; dashboard content is bounded by
+the 90rem content token. Fluid headings wrap within the available width. There is no hidden overflow
 to conceal layout mistakes.
 
 The skip link takes keyboard users directly to `main#main-content`, avoiding the
@@ -97,7 +97,7 @@ loading and keyboard accessibility, before building reusable product components.
 A primitive is a reusable building block: a button knows how an action looks and
 behaves, not what the action means for SkillBridge. These blocks live in
 `frontend/components/ui/` and are exported by `index.ts`. Phase 3 composes them in
-`frontend/components/skillbridge/`. The public homepage remains the Phase 1 placeholder.
+`frontend/components/skillbridge/`; Phase 4 composes these into the public dashboard.
 
 The layer contains Button/IconButton, Input/Textarea/Select, Checkbox, RadioGroup,
 Badge, Card compositions, ProgressBar, Avatar, Skeleton, EmptyState, and ErrorState.
@@ -216,7 +216,7 @@ Every path below is relative to `frontend/components/skillbridge/`:
   and optional next action. Its ProgressBar exposes “75%; 6 of 8 items complete”.
 - `dashboard-stat-card.tsx`: `DashboardStatCard` shows a label/value pair using a
   description list, optional context, and optional decorative icon/accent. Having
-  this component does not mean there is a dashboard page or analytics backend.
+  a stat card does not implement an analytics backend; Phase 4 supplies local values.
 - `skill-gap-card.tsx`: `SkillGapCard` uses ProgressBar and separately labelled
   strong/missing SkillChip lists. Empty lists get honest “No … supplied” text.
 - `learning-recommendation-card.tsx`: `LearningRecommendationCard` renders a skill,
@@ -264,8 +264,8 @@ progress values, empty skill groups, priority labels, and keyboard activation.
 `frontend/test/fixtures/domain.tsx` supplies representative local examples to the
 existing isolated fixture; `frontend/e2e/domain.spec.ts` verifies browser layout,
 axe/contrast, focus, native links, loading, and forced-color/reduced-motion reflow.
-These tests do not prove API integration, a real matching algorithm, or a complete
-dashboard, because none of those is implemented.
+These domain tests do not prove API integration or a real matching algorithm.
+Separate Phase 4 tests now verify dashboard composition and local interactions.
 
 ### Interview: How did you structure your frontend component system?
 
@@ -277,8 +277,108 @@ SkillGapCard, and other domain displays. They take typed, already calculated dat
 and caller-owned actions, rather than fetching or implementing business algorithms.
 For example, MatchScore classifies a supplied score for display, but never computes
 the match. This makes the domain components independently testable and lets shared
-accessibility fixes propagate through one primitive. Pages and API integration are
-still deferred; the components are verified in an isolated fixture.”
+accessibility fixes propagate through one primitive. Phase 4 pages compose these
+components; API integration is still deferred.”
+
+## Student Dashboard Composition — Phase 4
+
+### Beginner mental model: a page arranges existing building blocks
+
+The dashboard is a composition, not another design system:
+
+`tokens → UI primitives → SkillBridge domain components → page composition`
+
+`frontend/app/page.tsx` exports `HomePage` and its page title, then renders
+`StudentDashboard` from `frontend/components/dashboard/student-dashboard.tsx`.
+`StudentDashboard` is a Client Component because search and previews need browser
+state; Next still prerenders its initial HTML. It passes the search field and
+student summary into `DashboardShell` in `frontend/layout/dashboard-shell.tsx`.
+RootLayout still owns fonts, global styles, and the skip link to `main-content`.
+
+### Code map and composition
+
+- `dashboard-data.ts` holds typed snapshot data: metrics, six skills, three fictional
+  opportunities, four learning resources, four recent applications, and deadlines.
+  Its opportunity/learning types derive from domain props instead of duplicating
+  their interfaces. Display dates and urgency are fixed to 23 September 2026.
+- `StudentDashboard` uses DashboardStatCard, SkillProgress, SkillGapCard,
+  ProfileCompletion, ApplicationStatusBadge, DeadlineItem, and the Card family.
+  It groups applications in a semantic list, without inventing a second table system.
+- `RecommendationsSection` in `recommendations-section.tsx` renders OpportunityCard;
+  that existing domain owner composes Card + Badge + SkillChip + MatchScore + Button.
+- `LearningSection` in `learning-section.tsx` renders LearningRecommendationCard.
+- `SamplePreview` in `sample-preview.tsx` displays inline details/topic lists. It
+  focuses its heading on opening and returns focus to the action on close. It is
+  not a modal, real job-detail route, application submission, or course integration.
+- `MatchOverview` in `match-overview.tsx` renders the readiness/distribution chart.
+
+### Why data is local and APIs are intentionally deferred
+
+This phase tests page composition independently of authentication, loading policy,
+backend contracts, and network failures. The page explicitly says Design preview
+and Representative local data. The numbers are examples, not computed skill scores.
+There are no fetch calls, fake request delays, credentials, or global state stores.
+Future integration can adapt validated server data into the existing typed display
+props without replacing Button, OpportunityCard, or MatchScore.
+
+Search is a real but limited local interaction: `StudentDashboard.search` trims the
+draft and filters company/title/skill text case-insensitively after form submission.
+`clearSearch` resets it and focuses Input. IME composition is guarded. Draft and
+committed query are separate `useState` values; results/previews reset on a fresh
+page load rather than pretending to be persisted search. Submitting focuses the
+results group; no-results feedback offers a real local reset action.
+
+Only Dashboard is linked (`aria-current="page"`). Other navigation items say
+Coming soon and are not links to nonexistent pages. Notifications are disabled
+with a visible explanation. Profile editing and authentication UI do not exist.
+
+### Responsive layout and keyboard behavior
+
+`dashboard-shell.module.css` owns the 240px sidebar and header. Below 64rem, a named
+IconButton opens an in-flow navigation disclosure. `DashboardShell` uses
+`aria-expanded`/`aria-controls`, focuses its Dashboard link, handles Escape, restores
+trigger focus, and resets the disclosure on a desktop resize. It is nonmodal, so
+the rest of the page is not trapped or hidden. The browser tests verify this behavior.
+
+`dashboard.module.css` owns a 12-column main grid. At 80rem, insight/application
+sections split 7/5, learning/pathway split 8/4, and opportunities use three columns.
+Tablet layouts reduce complexity; metrics and learning cards use two columns from
+48rem. Mobile stacks sections with at least 16px gutters; desktop gutters are 32px.
+Cards and full titles wrap naturally, rather than clipping important data or hiding
+horizontal overflow. Page CSS consumes tokens; it does not restyle shared controls.
+
+### Chart accessibility and alternate states
+
+The trend uses a small SVG polyline and point markers, not a chart library. Its
+accessible name lists all checkpoints. The same dates/percentages appear as HTML
+text with a visible summary: 56% to 78%, up 22 percentage points. Each distribution
+bar has an adjacent label, score range, count, and percentage; the bar itself is
+decorative. Color supports meaning but never carries it alone. Forced colors use
+system colors. Plot geometry is presentation, not a matching algorithm.
+
+`RecommendationsSection` accepts `state` values ready/loading/empty/error. Loading
+uses Skeleton and a labelled busy region; EmptyState explains absence; ErrorState
+can restore local samples. `frontend/test/fixtures/dashboard-states.tsx` exposes
+these variants outside production routing. There is no fake asynchronous request.
+
+### Tests and interview explanation
+
+`dashboard.test.tsx` tests major sections, statuses, navigation semantics, menu focus,
+search/reset/IME protection, sample details, textual chart meaning, and alternate
+states. `frontend/e2e/dashboard.spec.ts` covers Chromium at 390/768/1024/1440px,
+overflow, keyboard/resize behavior, local actions, browser errors, no API requests,
+and axe. Existing font, contrast, primitive, and domain browser checks remain.
+These checks do not certify every browser or replace manual screen-reader testing.
+
+Q: How did you keep the dashboard maintainable as it became more complex?
+
+“I kept the direction tokens → primitives → domain components → page composition.
+DashboardShell owns responsive navigation, StudentDashboard arranges sections,
+RecommendationsSection and LearningSection own their local previews, and typed
+fixtures live outside JSX. Shared controls still own interaction/accessibility;
+domain cards still own product display rules. The page does not duplicate either
+layer or run matching logic. Small behavior tests and responsive browser checks
+let me verify each responsibility independently before connecting backend data.”
 
 ## Authentication and Role-Based Authorization
 
@@ -747,6 +847,12 @@ middleware and controllers.
 
 ## Things I Should Be Able to Explain Without Notes
 
+- [ ] Trace HomePage → StudentDashboard → DashboardShell and domain sections.
+- [ ] Explain local fixture data, deferred APIs, and transient search/preview state.
+- [ ] Explain the 12-column grid, responsive sidebar/disclosure, and focus restoration.
+- [ ] Explain chart text equivalents and why SVG plotting is not matching logic.
+- [ ] Demonstrate loading/empty/error fixture states without fake network requests.
+- [ ] Explain how tokens → primitives → domain components → page composition prevents one-off styling.
 - [ ] Explain the roles of `RootLayout`, `HomePage`, CSS Modules, and global styles.
 - [ ] Explain why primitives and domain components belong in separate layers.
 - [ ] Trace Card + Badge + SkillChip + MatchScore + Button into OpportunityCard.

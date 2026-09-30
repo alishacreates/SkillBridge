@@ -6,15 +6,15 @@ documentation areas.
 ```text
 SkillBridge/
 ├── backend/    # Express, TypeScript, Prisma, and PostgreSQL backend
-├── frontend/   # Next.js App Router: Phase 1 design foundation
+├── frontend/   # Next.js App Router: design system + local student dashboard
 └── docs/       # Architecture, API, setup, and project-learning documentation
 ```
 
 The backend application lives in `backend/`. Its HTTP
 surface contains infrastructure health checks plus registration, login, Bearer
 authentication, reusable role authorization, and current-user retrieval. The
-frontend currently renders a standalone coming-soon page with design tokens and
-fonts; it has no API integration, authentication UI, or business features yet.
+frontend renders a responsive student dashboard composed from the design system.
+All dashboard data is fictional and local; there is no API integration or authentication UI.
 
 ## Backend quick start
 
@@ -39,7 +39,7 @@ npm run dev
 ```
 
 Open `http://localhost:3001`. No frontend environment variables are needed for
-Phase 1. See [the design foundation](docs/design-system.md) for verification commands.
+the dashboard preview. See [the design system](docs/design-system.md) for verification commands.
 
 ## Project documentation
 

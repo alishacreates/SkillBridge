@@ -1,13 +1,13 @@
 # SkillBridge Design System
 
-## Current scope: Phases 1–3
+## Current scope: Phases 1–4
 
 Implemented: a standalone Next.js App Router package, strict TypeScript, font
 loading, canonical CSS tokens, global accessibility/base styles, and a responsive
-coming-soon homepage, generic UI primitives under `frontend/components/ui/`, and
-SkillBridge domain compositions under `frontend/components/skillbridge/`.
-No feature forms, dashboard, charts, `/design`, authentication UI, or API integration
-exists yet. Phase 3 stops at review of the reusable domain layer.
+student dashboard at `/`, generic UI primitives under `frontend/components/ui/`,
+and SkillBridge domain compositions under `frontend/components/skillbridge/`.
+The dashboard uses typed local data and lightweight SVG charts. No feature forms,
+`/design`, authentication UI, or API integration exists. Phase 4 stops at page review.
 
 The approved specification is
 `docs/specs/2026-09-14-frontend-design-system-design.md`; its root-backend and full
@@ -18,14 +18,15 @@ intent is maintained in `frontend/DESIGN.md` as requested for Phase 1.
 ## Ownership and styling
 
 `frontend/styles/tokens.css` owns all runtime design values. `app/globals.css`
-imports it, then `styles/base.css`, once from `app/layout.tsx`. The placeholder's
-`app/page.module.css` consumes those variables. CSS Modules are the styling choice
+imports it, then `styles/base.css`, once from `app/layout.tsx`. The dashboard's
+`components/dashboard/dashboard.module.css` and `layout/dashboard-shell.module.css`
+consume those variables. CSS Modules are the styling choice
 recorded in the approved implementation plan; Tailwind and CSS-in-JS are not added.
 
 Change a value in the token stylesheet and update the affected documentation.
 Do not copy palette values into page-level CSS or introduce a parallel JS theme.
 SVG favicon colors are the documented exception because the SVG is a separate
-document. Literal media thresholds (48rem/64rem) and structural CSS such as `0`,
+document. Literal media thresholds (48rem/64rem/80rem) and structural CSS such as `0`,
 `100%`, and flex factors are not semantic theme values.
 
 ## Color tokens
@@ -59,7 +60,7 @@ Semantic colors are independent from brand accents:
 | Error | `--color-error`: `#A3293D` | `--color-error-surface`: `#FCECEF` |
 | Info | `--color-info`: `#245B8A` | `--color-info-surface`: `#EAF2FB` |
 
-The reserved chart palette uses dark, readable hues:
+The chart palette uses dark, readable hues:
 
 | Token | Value |
 | --- | --- |
@@ -71,8 +72,9 @@ The reserved chart palette uses dark, readable hues:
 | `--chart-cyan` | `#186D7A` |
 | `--chart-orange` | `#A64F20` |
 
-No chart is implemented. Later charts must include labels, values, or patterns;
-contrast against a surface alone does not distinguish adjacent data series.
+MatchOverview uses purple for its trend and purple/yellow/blue for separated
+distribution bars. Visible labels, ranges, values, and summaries supply equivalent
+meaning; contrast against a surface alone does not distinguish data series.
 Brand pink/yellow are not approved small-text colors on the pale canvas. Contrast
 must be checked for the actual foreground/background pair when components are added.
 
@@ -86,7 +88,8 @@ font host. See the [Next.js font documentation](https://nextjs.org/docs/app/gett
 
 The generated variables `--font-inter` and `--font-felipa` are applied to `<html>`.
 `--font-body` adds Arial/sans-serif fallbacks and is inherited by the whole UI.
-`--font-decorative` adds Georgia/serif fallbacks and is used only by `.brandNote`.
+`--font-decorative` adds Georgia/serif fallbacks and is used only by the dashboard's
+decorative `.brandNote` welcome phrase.
 
 | Role | Runtime size | Line height |
 | --- | --- | --- |
@@ -121,7 +124,7 @@ Inter; Felipa is decorative brand emphasis only.
 
 `--layout-content-max` is 90rem (1440px), `--layout-shell-max` is 72rem (1152px),
 `--layout-copy-max` is 38rem, and `--layout-sidebar-width` is 15rem (240px).
-Only shell and copy widths are used now. `--layout-gutter` changes from 1rem to
+The dashboard uses content, sidebar, and copy widths. `--layout-gutter` changes from 1rem to
 1.5rem at 48rem and 2rem at 64rem. `--layout-min-target` is 2.75rem (44px).
 
 The page grows naturally; min-height is not a content-height limit. No horizontal
@@ -154,7 +157,7 @@ npm run test:e2e
 ```
 
 The browser check runs against the production build on port 3101. It checks 390,
-768, and 1440px viewports, actual font loading, canvas/text colors, overflow, skip
+768, 1024, and 1440px dashboard viewports, actual font loading, canvas/text colors, overflow, skip
 link/focus behavior, browser errors, reduced motion, and forced colors. Screenshots
 and failure traces go into ignored `frontend/test-results/`.
 
@@ -169,7 +172,7 @@ not the final showcase. Vite/Vitest/testing libraries are development dependenci
 
 Development and normal production serving use port 3001 (`npm run dev`, or build
 then `npm start`), avoiding the backend's documented default port 3000. No frontend
-environment variables or database connection are needed for Phase 1.
+environment variables or database connection are needed for the local dashboard.
 
 Tooling constraint: ESLint remains on major 9 because the React/import/accessibility
 plugins bundled with the current Next preset do not support major 10. npm emits an
@@ -367,3 +370,95 @@ documented above, with no new domain findings. Builds require network access for
 the existing next/font configuration; the sandboxed font fetch failed, then the
 network-enabled build passed. Playwright emits the existing NO_COLOR/FORCE_COLOR
 environment warning. No new dependency or application integration was added.
+
+## Student dashboard composition (Phase 4)
+
+`frontend/app/page.tsx` renders `StudentDashboard` from
+`components/dashboard/student-dashboard.tsx`. The previous placeholder stylesheet
+is removed. `layout/dashboard-shell.tsx` owns the responsive navigation/header;
+`dashboard-data.ts` supplies typed fictional data dated 23 September 2026. No
+dependencies, runtime tokens, UI primitives, or domain components were changed.
+
+| Section | Existing composition |
+| --- | --- |
+| Header/search | Input, IconButton, Avatar; functional local search, disabled notifications |
+| Four metrics | DashboardStatCard with restrained primary/semantic/chart accents |
+| Match overview | Card/Badge plus lightweight SVG trend and labelled distribution |
+| Six skills | SkillProgress, preserving the existing pathway motif |
+| Three opportunities | OpportunityCard with contextual local sample-detail actions |
+| Skill gaps/profile | SkillGapCard, ProfileCompletion; real anchors to learning/profile advice |
+| Four learning resources | LearningRecommendationCard with inline topic previews |
+| Recent applications | Card, semantic list, ApplicationStatusBadge; read-only states |
+| Upcoming deadlines | Card, ordered list, DeadlineItem; fixed sample urgency |
+
+### Layout and interaction contracts
+
+- Desktop sidebar: 15rem at 64rem and above. Below it, the menu is an in-flow,
+  nonmodal disclosure, with expanded/controls state, initial focus, Escape close,
+  focus restoration, and desktop-resize reset. Dashboard is the only route link;
+  other items visibly say Coming soon. The document keeps natural scrolling.
+- Main grid: 12 columns; 7/5 insight/application splits and 8/4 learning/pathway
+  splits from 80rem. Metrics use one/two/four columns at base/48rem/80rem;
+  opportunities use three columns from 80rem. Smaller screens stack sections with
+  the existing 16/24/32px gutter tokens. No overflow hiding or critical truncation.
+- Search: explicit submit, case-insensitive company/title/skill filtering over
+  three samples, clear/no-results recovery, and IME guard. State is transient and
+  local; no URL state, debouncing, or network lifecycle is needed.
+- `SamplePreview` is an inline Card, not a dialog. Opportunity and learning actions
+  show actual sample content; opening focuses its heading and closing restores the
+  action. They do not submit applications, navigate to invented routes, or open
+  external learning services.
+- `RecommendationsSection` takes ready/loading/empty/error states. Skeleton reserves
+  card space inside a named busy region; EmptyState/ErrorState supply explicit text.
+  `test/fixtures/dashboard-states.tsx` switches these locally and restores sample
+  data. No fake latency/fetch or production state-selector route is introduced.
+
+### Chart and accessibility decisions
+
+`MatchOverview` plots supplied readiness values with SVG geometry, not a chart
+library. The accessible SVG name lists dates/values; an HTML checkpoint list and
+caption repeat the meaning visibly. Distribution text supplies labels, score
+ranges, counts, and percentages independently of the decorative bars. Chart hues
+come from existing tokens; forced colors use system colors. This is presentation,
+not a matching calculation. Inter remains functional UI type; Felipa appears once
+as an aria-hidden decorative welcome phrase.
+
+One h1 introduces the dashboard, h2 names sections, and h3 names nested cards/items.
+Cards remain ordinary containers with real named actions. The existing skip link,
+focus ring, reduced motion, long-text wrapping, and semantic status labels remain.
+
+### Phase 4 verification scope
+
+`dashboard.test.tsx` adds eleven behavior tests, observed failing before implementation:
+sections/data, navigation, keyboard menu, local search/reset, IME, previews/focus,
+chart text, loading/empty/error, and resize focus recovery. `e2e/dashboard.spec.ts` adds seven browser tests:
+four viewport/axe checks, keyboard/menu resize, search/preview actions, and alternate
+state recovery. Existing font/contrast, primitive, and domain browser tests remain.
+Screenshots include full dashboards, chart/opportunity details, mobile menu, and
+feedback states. Automated Chromium/axe coverage is not cross-browser or manual
+screen-reader certification. The four pre-existing static-audit findings above
+remain; there are no new dashboard findings.
+
+### Phase 4 verification record
+
+On 2026-09-24, lint, strict typecheck, all 63 component tests (11 new dashboard
+tests), production build, and all 22 Chromium tests (seven new dashboard checks)
+passed. Axe reported no tested WCAG A/AA violations; the 22 existing token contrast
+pairs passed. Viewports 390/768/1024/1440px had no horizontal overflow, JavaScript
+console/page errors, or `/api/` requests. Font, skip/focus, reduced-motion,
+forced-colors, long-text, score/status, and alternate-state checks remained green.
+Desktop/tablet/mobile and chart/opportunity/menu/feedback screenshots were reviewed.
+
+Visual review corrected a mobile percentage wrap and reduced metric density at
+1024px. A repeated browser run exposed CSS clearing mobile-link focus before the
+media callback. The shell now preserves the last focus owner for breakpoint
+transfers, with an explicit non-null guard and no movement from unrelated controls.
+A red-first regression covers that ordering; 25 repeated menu checks passed after
+the recovery fix, followed by the full suite after the final guard adjustment.
+Temporary tracing was removed; no sleeps or weakened assertions were introduced.
+
+`git diff --check` passed; backend/Prisma, primitives, domain components, and token
+diffs were empty. DESIGN.md lint returned zero errors/warnings. The supplemental
+strict scanner still exits 1 for the same four reviewed Phase 2 findings. No
+dependencies, APIs, authentication UI, `/design`, or additional product routes were
+added. Chromium/axe checks do not replace manual assistive-technology testing.
