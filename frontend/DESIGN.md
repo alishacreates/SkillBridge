@@ -50,7 +50,9 @@ internationalization is implemented.
 The public `/` is the Phase 4 student dashboard with explicitly fictional local
 data. `components/dashboard/` composes Phase 2 primitives in `components/ui/` and
 Phase 3 domain components in `components/skillbridge/`. The isolated test fixture
-still verifies reusable components and alternate states; it is not `/design`.
+still verifies reusable components and alternate states. The public `/design`
+reference now composes the same exports in `components/design/`; it is not a copy
+of the fixture or a second component system.
 Connected markers in SkillProgress and SkillGapCard provide the restrained pathway
 signature. No backend integration or calculated analytics exists.
 
@@ -86,9 +88,10 @@ build time and serves them locally. Fonts are bound to `--font-inter` and
 `--font-felipa` on the root element; `--font-body` and `--font-decorative` adapt them.
 
 Inter owns all product text, headings, data, navigation, and labels. Felipa appears
-only in the short decorative `.brandNote` welcome phrase in
-`components/dashboard/dashboard.module.css`. It repeats no essential information
-and is hidden from assistive technology. Felipa is never a global heading or body font.
+in the short decorative `.brandNote` welcome phrase in
+`components/dashboard/dashboard.module.css`, plus a brief intro accent and labelled
+type specimen on `/design`. The dashboard/intro decoration is hidden from assistive
+technology; the specimen is explicitly labelled. Felipa is never a global heading or body font.
 Type sizes, line heights, weights, and heading tracking come from `--type-*` and
 `--font-weight-*` tokens. Body text is 16px at the browser's default root size.
 
@@ -224,6 +227,35 @@ counts, ranges, and explanatory text. The trend SVG has a complete accessible na
 distribution bars are decorative beside equivalent text. No chart dependency,
 matching algorithm, new token, or parallel component system was introduced.
 
+### Public reference (Phase 5)
+
+`app/design/page.tsx` renders `DesignShowcase` with a unique document title. The
+reference uses a wide editorial introduction, clear section dividers, and a sticky
+in-page index from 64rem. On narrow or short screens the index remains in document
+flow. Natural document scrolling, token gutters, bounded grid tracks, and full-text
+wrapping preserve reachability; no hidden overflow or independently scrolling panels.
+
+`TokenSpecimens` paints brand/semantic/chart swatches and type/spacing/radius/shadow/
+layout examples from CSS variables. `catalog.ts` contains display labels, not a
+theme: browser tests compare hex labels against computed colors. Chart rows include
+names and values outside decorative bars. Layout specimens are capped to the panel,
+not miniature proportional diagrams. No locked token is modified.
+
+`PrimitiveSpecimens` and `DomainSpecimens` import real public exports. Enabled
+actions produce explicit local status feedback, never applications or server calls.
+The small `noValidate` form checks only its example name, focuses the associated
+error, and preserves text on correction. Native Select retains OS-owned popup
+geometry; Textarea retains the approved vertical resize. Removing Docker focuses
+its restore action. `StateLab` uses native checkboxes/radios to select disabled,
+loading, ready, empty, or error states. Recovery focuses the Ready radio; loading
+has an explicit user-controlled exit and no fake timer. Hover/focus-visible/active
+are actual browser states on Button, not copied CSS recipes.
+
+Dashboard footer and reference header provide real two-way navigation. The page
+explains token → primitive → domain → page layering and the implemented accessibility
+choices without claiming certification. Authentication UI and API integration remain
+out of scope; the internal fixture continues to provide isolated regression checks.
+
 ### Motion and content
 
 Durations are 120/200/320ms with `cubic-bezier(0.2, 0, 0, 1)`. The current page has
@@ -238,7 +270,7 @@ Charts include values and summaries rather than relying on color.
 - Do keep text contrast, keyboard focus, responsive wrapping, and native semantics.
 - Do keep scrollbar themes global, visible, and compatible with forced colors.
 - Don't use Felipa for product information or pink/yellow for small light-surface text.
-- Don't add `/design`, feature forms, new product routes, or API integration in Phase 4.
+- Don't add feature forms, new product workflows, or API integration in Phase 5.
 
 ### Phase 2 reconciliation
 
@@ -261,3 +293,10 @@ The approved dashboard replaces the placeholder at `/`; the unused placeholder C
 was removed. The existing tokens, fonts, primitives, and domain implementation stay
 unchanged. Page-only CSS owns layout/chart geometry; shared components retain all
 control and status behavior. The fixture gains alternate recommendation states.
+
+### Phase 5 reconciliation
+
+The approved `/design` route replaces its prior deferred status. Existing tokens,
+primitives, and domain implementations remain unchanged. New CSS owns only reference
+layout and token specimens; all shared component states stay with their original
+owners. No new dependencies, theme, or API boundary is introduced.

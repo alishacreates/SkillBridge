@@ -59,6 +59,10 @@ describe("student dashboard composition", () => {
     ])
       expect(within(applications).getByText(status)).toBeVisible();
     expect(screen.getByText(/Representative local data/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Design system" })).toHaveAttribute(
+      "href",
+      "/design",
+    );
     expect(
       screen.getByRole("progressbar", { name: "Profile completion" }),
     ).toHaveAttribute("aria-valuetext", "82%; 9 of 11 items complete");

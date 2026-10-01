@@ -10,7 +10,8 @@ needed to explain the design in a technical interview.
 - `backend/` contains the complete Express, TypeScript, Prisma, and PostgreSQL
   backend. Run npm and Prisma commands from this directory.
 - `frontend/` contains the Next.js design foundation, generic primitives, domain
-  components, and Phase 4 student dashboard. It uses local data, not backend APIs.
+  components, student dashboard, and Phase 5 public `/design` reference. Both use
+  local data, not backend APIs.
 - `docs/` contains repository-level architecture, API, setup, decision, and learning
   documentation.
 
@@ -54,8 +55,9 @@ accents. Chart tokens now supply the Phase 4 readiness/distribution visualizatio
 `Inter` and `Felipa` are imported from `next/font/google` in `RootLayout`. Next
 downloads font files at build time and serves them locally. The root font variables
 feed `--font-body` and `--font-decorative` in the token stylesheet. Inter is used for
-all UI text. Only `.brandNote` in `components/dashboard/dashboard.module.css` uses Felipa, for the short
-decorative line. The fonts use `display: swap` so readable fallback text can appear
+all UI text. `.brandNote` in `components/dashboard/dashboard.module.css` uses Felipa
+for a short decorative line; `/design` adds a short intro accent and labelled type
+specimen. The fonts use `display: swap` so readable fallback text can appear
 while the font finishes loading.
 
 ### Responsive and accessible defaults
@@ -328,7 +330,8 @@ committed query are separate `useState` values; results/previews reset on a fres
 page load rather than pretending to be persisted search. Submitting focuses the
 results group; no-results feedback offers a real local reset action.
 
-Only Dashboard is linked (`aria-current="page"`). Other navigation items say
+Only Dashboard is linked in product navigation (`aria-current="page"`); the footer
+also links to the public design reference. Other navigation items say
 Coming soon and are not links to nonexistent pages. Notifications are disabled
 with a visible explanation. Profile editing and authentication UI do not exist.
 
@@ -379,6 +382,79 @@ fixtures live outside JSX. Shared controls still own interaction/accessibility;
 domain cards still own product display rules. The page does not duplicate either
 layer or run matching logic. Small behavior tests and responsive browser checks
 let me verify each responsibility independently before connecting backend data.”
+
+## Design System Showcase — Phase 5
+
+### Beginner mental model: a live reference, not a screenshot
+
+`/design` is a shared place to see the visual vocabulary used by the dashboard.
+It shows which colors mean success/error, how controls behave when busy, and how
+generic pieces form product-specific cards. A designer can point to a named token
+or state; a developer can find its real implementation instead of interpreting a
+screenshot and inventing a slightly different version.
+
+The page uses production components on purpose. If Button's focus behavior changes,
+both the dashboard and reference inherit it. A showcase-only imitation could look
+right while hiding a regression in the actual product. Reuse prevents this visual
+and behavioral drift as the frontend grows.
+
+### Follow the actual files
+
+- `frontend/app/design/page.tsx` exports `DesignPage` and route metadata. It renders
+  `DesignShowcase` from `frontend/components/design/design-showcase.tsx`.
+- `DesignShowcase` owns introduction, section navigation, accessibility explanation,
+  and the token → primitive → domain → page diagram. It composes `TokenSpecimens`,
+  `PrimitiveSpecimens`, `DomainSpecimens`, and `StateLab` rather than containing one
+  giant list of controls. Dashboard footer and reference header use actual links.
+- `token-specimens.tsx` exports `TokenSpecimens`. Its CSS Module consumes the same
+  `frontend/styles/tokens.css` as the dashboard. `catalog.ts` holds readable names,
+  hex labels, and typed fictional data—not styling values for a second theme.
+  The browser test compares every color label to its runtime token and painted color.
+- `primitive-specimens.tsx` exports `PrimitiveSpecimens`. It imports shared controls
+  from `../ui`. Its local `noValidate` form checks an example name, focuses invalid
+  Input, and preserves the typed value. The shared field owner still supplies stable
+  label/error IDs; this is a demonstration, not a registration form or API request.
+- `domain-specimens.tsx` exports `DomainSpecimens`, importing `../skillbridge`.
+  MatchScore shows supplied numbers; status/priority mappings stay inside the domain
+  owners. Enabled sample actions report local feedback. Removing Docker moves focus
+  to its restore action instead of losing keyboard position.
+- `state-lab.tsx` exports `StateLab`. Checkboxes change real Button loading/disabled
+  props; RadioGroup changes feedback content. `restoreReady` resets local state and
+  focuses the Ready radio because the recovery button is being removed. Hover and
+  pressed examples use real browser interactions, not classes pretending to be states.
+
+The reference is server-compatible except for those small local interaction
+compositions, which use `"use client"`. There is no Redux, persistence, request timer,
+or backend integration. CSS owns only reference layout/token specimens; it does not
+reimplement shared buttons, fields, or domain statuses. Inter remains functional;
+Felipa appears only in two short decorative/type specimens.
+
+### Responsive and accessibility evidence
+
+The index sits beside sections on desktop and flows above them on narrow screens.
+Short viewports disable stickiness, so links stay reachable. Layout specimen bars
+use real token widths bounded by their panel; nested grids use `minmax(0, 1fr)` so
+the 90rem specimen cannot force the page wider than the screen. No overflow hiding.
+Chart series each have a visible name and count; their bars are decorative.
+
+`design-showcase.test.tsx` exercises real production components and local behavior.
+`frontend/e2e/design.spec.ts` checks the compiled route at 390/768/1024/1440px, token
+values, keyboard focus, state recovery, console errors, axe, and a 320px reduced-motion/
+forced-colors view. Existing contrast checks continue to run. Automated checks and
+visual review do not equal WCAG certification or manual screen-reader certification.
+
+### Interview answer
+
+Q: Why did you build a design system instead of styling pages independently?
+
+“SkillBridge separates tokens → UI primitives → domain components → pages. Tokens
+in `styles/tokens.css` centralize visual decisions; `components/ui` owns reusable
+controls and accessibility; `components/skillbridge` adds product meaning; the
+dashboard composes them. `/design` demonstrates those exact exports, not replicas.
+This prevents each page inventing different spacing, button states, or status
+colors. It gives designers and developers a common reference and makes changes
+testable at the responsible layer. We still verify page composition in the browser,
+because shared components alone do not guarantee a good responsive layout.”
 
 ## Authentication and Role-Based Authorization
 
@@ -847,6 +923,12 @@ middleware and controllers.
 
 ## Things I Should Be Able to Explain Without Notes
 
+- [ ] Explain why `/design` uses production exports rather than showcase replicas.
+- [ ] Trace DesignPage → DesignShowcase → token, primitive, domain, and state specimens.
+- [ ] Explain how runtime-token checks prevent display labels from drifting.
+- [ ] Demonstrate real hover/focus/active, local validation, and state recovery focus.
+- [ ] Explain how a shared reference improves designer/developer collaboration.
+- [ ] Answer why a design system is preferable to independently styling each page.
 - [ ] Trace HomePage → StudentDashboard → DashboardShell and domain sections.
 - [ ] Explain local fixture data, deferred APIs, and transient search/preview state.
 - [ ] Explain the 12-column grid, responsive sidebar/disclosure, and focus restoration.

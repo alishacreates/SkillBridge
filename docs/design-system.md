@@ -1,13 +1,14 @@
 # SkillBridge Design System
 
-## Current scope: Phases 1–4
+## Current scope: Phases 1–5
 
 Implemented: a standalone Next.js App Router package, strict TypeScript, font
 loading, canonical CSS tokens, global accessibility/base styles, and a responsive
 student dashboard at `/`, generic UI primitives under `frontend/components/ui/`,
 and SkillBridge domain compositions under `frontend/components/skillbridge/`.
-The dashboard uses typed local data and lightweight SVG charts. No feature forms,
-`/design`, authentication UI, or API integration exists. Phase 4 stops at page review.
+The dashboard uses typed local data and lightweight SVG charts. The public `/design`
+reference demonstrates the actual tokens and component exports. No feature forms,
+authentication UI, or API integration exists. Phase 5 stops at showcase review.
 
 The approved specification is
 `docs/specs/2026-09-14-frontend-design-system-design.md`; its root-backend and full
@@ -88,8 +89,8 @@ font host. See the [Next.js font documentation](https://nextjs.org/docs/app/gett
 
 The generated variables `--font-inter` and `--font-felipa` are applied to `<html>`.
 `--font-body` adds Arial/sans-serif fallbacks and is inherited by the whole UI.
-`--font-decorative` adds Georgia/serif fallbacks and is used only by the dashboard's
-decorative `.brandNote` welcome phrase.
+`--font-decorative` adds Georgia/serif fallbacks and is used by the dashboard's
+decorative `.brandNote` welcome phrase and `/design`'s short intro/type specimens.
 
 | Role | Runtime size | Line height |
 | --- | --- | --- |
@@ -157,7 +158,7 @@ npm run test:e2e
 ```
 
 The browser check runs against the production build on port 3101. It checks 390,
-768, 1024, and 1440px dashboard viewports, actual font loading, canvas/text colors, overflow, skip
+768, 1024, and 1440px dashboard/reference viewports, actual font loading, canvas/text colors, overflow, skip
 link/focus behavior, browser errors, reduced motion, and forced colors. Screenshots
 and failure traces go into ignored `frontend/test-results/`.
 
@@ -168,7 +169,7 @@ generated font assets and reuses its font classes/CSS rather than configuring a
 second font system. To inspect manually after building, run
 `npm start -- --hostname 127.0.0.1 --port 3101` and `npm run test:fixtures` in separate
 terminals. Visit `http://127.0.0.1:3102`. This is temporary verification infrastructure,
-not the final showcase. Vite/Vitest/testing libraries are development dependencies.
+separate from the public `/design` showcase. Vite/Vitest/testing libraries are development dependencies.
 
 Development and normal production serving use port 3001 (`npm run dev`, or build
 then `npm start`), avoiding the backend's documented default port 3000. No frontend
@@ -462,3 +463,87 @@ diffs were empty. DESIGN.md lint returned zero errors/warnings. The supplemental
 strict scanner still exits 1 for the same four reviewed Phase 2 findings. No
 dependencies, APIs, authentication UI, `/design`, or additional product routes were
 added. Chromium/axe checks do not replace manual assistive-technology testing.
+
+## Public design reference (Phase 5)
+
+Visit `/design` from the dashboard footer; its header links back to `/`. The route
+is public and static-prerendered. `frontend/components/design/design-showcase.tsx`
+composes ten sections: brand, semantic, chart palette, typography, geometry, generic
+primitives, domain components, states, accessibility, and architecture. The intro
+uses Inter with one short Felipa accent; typography includes a labelled Felipa sample.
+
+- `catalog.ts`: readable token/hex/usage labels and typed fictional examples. These
+  are documentation, not a JS theme; `design.module.css` paints exclusively with
+  existing runtime variables. Browser checks detect drift across all 16 color labels.
+- `token-specimens.tsx`: five brand colors, four semantic roles, seven labelled chart
+  series, nine Inter roles, eight spaces, five radii, three shadows, four layout
+  widths. Layout bars show actual widths capped to their container; chart counts
+  are explicitly illustrative and repeated in text.
+- `primitive-specimens.tsx`: actual Button variants/sizes/busy/disabled, IconButton,
+  field/choice controls, Badge, Avatar, Card composition, and ProgressBar. The local
+  example-name form owns validation timing/error focus with shared Input. No data
+  is submitted. Select popup is native/browser-owned; Textarea remains vertical-only.
+- `domain-specimens.tsx`: all eleven production domain exports; four match bands,
+  all seven application states, three learning priorities, long titles/skills,
+  candidate/deadline variants, and explicit local action feedback. Chip removal
+  transfers focus to its restore button. No job, course, or recruiter API is implied.
+- `state-lab.tsx`: real hover/focus/active Button states; native checkboxes select
+  disabled/loading; RadioGroup chooses ready/loading/empty/error content using
+  Skeleton, EmptyState, ErrorState, and Card. Recovery returns focus to Ready.
+  Loading is an explicitly controlled specimen, not a pending network operation.
+
+The desktop index is sticky only when there is sufficient viewport height. At
+narrow widths it wraps in natural document flow. Specimen grids use bounded tracks,
+critical labels wrap, and the document—not an inner panel—owns vertical scrolling.
+Accessibility copy describes implemented semantics, focus, labels/errors, motion,
+forced colors, text-equivalent charts and contrast without claiming certification.
+
+### Phase 5 verification coverage
+
+`components/design/design-showcase.test.tsx` adds six behavioral tests against real
+exports: sections/tokens, button feedback and disabled/busy state, form error/recovery,
+state switching, domain content/actions/removal. These initially failed against a
+null composition; the recovery-focus regression separately failed before its fix.
+The dashboard test also checks its new link. `e2e/design.spec.ts` adds production
+viewport/axe/error/overflow checks, computed-token drift checks, real hover/active/
+focus, local field/state recovery, route navigation, and 320px forced-colors/reduced
+motion. Existing primitive, domain, dashboard, and 22-pair contrast checks remain.
+Browser regressions are not all separate red-first cycles. Screenshots and traces
+remain ignored test artifacts, not committed assets or certification evidence.
+
+The supplemental strict scanner now reports six reviewed findings: the four
+Phase 2 findings recorded above, plus the permanently loading Button specimen
+(native disabled is supplied by Button's `loading` prop) and a use of the shared
+vertical-resize Textarea. These are scanner composition/contract limitations, not
+a clean static-audit result. No no-op handlers, local control clones, or scanner
+suppression rules were added. DESIGN.md's separate official validator passes.
+
+### Phase 5 verification record
+
+On 2026-10-01, the final `npm run lint`, `npm run typecheck`, `npm test` (69 tests),
+`npm run build`, and `npm run test:e2e -- --workers=2` (31 tests) passed. Six component
+tests and nine browser tests are new; the dashboard navigation test is extended.
+Production routes include `/design`. Axe found no tested A/AA violations, all 22
+existing contrast pairs passed, and all 16 displayed palette values matched the
+runtime token and rendered color. Viewports 390/768/1024/1440px had no horizontal
+overflow, console/page/HTTP errors, or API requests; 320px reduced-motion/forced-color
+reflow also passed. Desktop/tablet/mobile, long domain content, typography, chart
+palette, focus, hover/active, busy, empty, and error screenshots were reviewed.
+
+Browser feedback corrected intrinsic sizing in nested token-specimen grids. Visual
+review caught recovery buttons stretching inside reserved-height feedback panels;
+a regression failed at 139px versus the ordinary 44px Button before page-only
+alignment restored the normal footprint. The final suite includes that assertion.
+
+One intermediate browser run received HTTP 500 for both Next stylesheet assets,
+causing an unstyled axe failure. The trace identified asset loading as the immediate
+cause, not a link-spacing defect. Five repeated checks and two subsequent complete
+suites passed without recurrence; the underlying transient server cause remains
+unexplained. Asset/style assertions now precede the route's axe checks. Existing
+NO_COLOR/FORCE_COLOR warnings remain informational. No assertions were skipped.
+
+`git diff --check` and official DESIGN.md lint (zero errors/warnings) passed. The
+supplemental scanner's six reviewed findings are documented above. Backend/Prisma,
+shared primitives/domain components, dependencies, and runtime tokens have no diff.
+There is no API integration, authentication UI, or commit. Manual screen-reader and
+broader browser/platform verification remain outside this Chromium evidence.

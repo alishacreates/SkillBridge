@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 import { Badge, Card, CardHeader, CardTitle, IconButton, Input } from "../ui";
 import {
@@ -143,6 +144,7 @@ export function StudentDashboard() {
             </Card>
           </section>
           <div
+            id="opportunity-examples"
             ref={results}
             role="group"
             tabIndex={-1}
@@ -258,7 +260,7 @@ export function StudentDashboard() {
         </div>
         <footer className={styles.footer}>
           A clearer path from what you know to what comes next.
-          <span>SkillBridge · Student preview</span>
+          <Link href="/design">Design system</Link>
         </footer>
       </main>
     </DashboardShell>

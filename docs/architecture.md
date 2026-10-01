@@ -5,7 +5,7 @@ separate Next.js frontend. The backend's implemented HTTP surface consists of
 infrastructure health checks plus registration,
 login, Bearer authentication, role authorization middleware, and current-user
 retrieval. The backend is self-contained under `backend/`; `frontend/` contains the
-Next.js design foundation, primitives, domain components, and Phase 4 student dashboard; documentation remains in
+Next.js design foundation, primitives, domain components, student dashboard, and public design reference; documentation remains in
 `docs/`. The frontend does not call the backend yet.
 
 ## Request flow
@@ -60,12 +60,13 @@ SkillBridge/
 │   ├── prisma.config.ts
 │   └── tsconfig*.json
 ├── frontend/
-│   ├── app/                 # App Router document shell and dashboard homepage
+│   ├── app/                 # App Router shell, dashboard /, and public /design
 │   ├── layout/              # Dashboard shell, responsive navigation, decorative icons
 │   ├── styles/              # Canonical tokens and global base styles
 │   ├── components/ui/       # Product-agnostic primitives and component tests
 │   ├── components/skillbridge/ # Typed domain compositions and component tests
 │   ├── components/dashboard/ # Page composition, local data, chart, sample previews
+│   ├── components/design/   # Production-component reference, token specimens, local state lab
 │   ├── test/fixtures/       # Isolated browser fixture; not a Next route
 │   ├── e2e/                 # Production browser smoke checks
 │   ├── DESIGN.md            # Visual intent and token ownership
@@ -87,13 +88,13 @@ Prisma; a ten-second timeout prevents shutdown from hanging indefinitely.
 Non-operational errors such as a missing required role profile are logged outside
 tests and exposed only as the generic `500 INTERNAL_SERVER_ERROR` envelope.
 
-## Frontend composition (Phases 1–4)
+## Frontend composition (Phases 1–5)
 
 `frontend/app/layout.tsx` owns the HTML document, metadata, Inter/Felipa font
 variables, global styles, and skip navigation. `frontend/app/page.tsx` is a Server
 Component with dashboard metadata that renders `StudentDashboard`, a client
 composition with local search/preview state. Next still prerenders the initial HTML.
-No API calls, auth UI, or `/design` route exist. `components/ui/` exposes native controls and display/feedback components;
+No API calls or auth UI exist. `components/ui/` exposes native controls and display/feedback components;
 it cannot import domain/page/backend code. `components/skillbridge/` composes that
 layer into opportunity, skill, match, profile, candidate, and deadline displays.
 These receive typed props and caller-owned actions; no API or matching logic exists
@@ -119,13 +120,22 @@ supplied values and matching HTML summaries; it is not an analytics engine.
 navigation disclosure below it. Escape closes the menu and restores focus. Main
 content scrolls with the document; a 12-column grid uses multi-column sections at
 80rem, reduced columns at tablet widths, and a single column on mobile. Gutters
-remain 16/24/32px. Only Dashboard links to a route; other destinations and
+remain 16/24/32px. Only Dashboard in product navigation links to a route; other destinations and
 notifications are explicitly unavailable. No fake backend workflows are exposed.
+
+`app/design/page.tsx` renders the public `DesignShowcase`. Static introduction,
+`TokenSpecimens`, accessibility notes, and layering diagram are server-compatible;
+`PrimitiveSpecimens`, `DomainSpecimens`, and `StateLab` are small Client Components
+for local controls and feedback. They import the production `ui` and `skillbridge`
+exports directly, never the test fixture. `catalog.ts` holds typed example data and
+documentation labels; CSS variables remain the sole runtime theme. The reference
+adds no persistence, API requests, or global state. Dashboard footer/reference
+header link between the two routes; other product navigation remains unavailable.
 
 Frontend commands run in `frontend/`; development/production servers default to
 3001. Strict TypeScript and the Next/TypeScript ESLint presets are configured.
 `npm run typecheck` generates App Router types before running `tsc --noEmit`.
 Vitest/Testing Library checks component behavior. Playwright checks the compiled
-dashboard plus an isolated Vite primitive/domain/dashboard-state fixture with axe and interaction tests.
+dashboard and `/design`, plus an isolated Vite primitive/domain/dashboard-state fixture with axe and interaction tests.
 The fixture is outside App Router and reuses production fonts through a local proxy.
-API integration, authentication UI, other product routes, and `/design` remain deferred.
+API integration, authentication UI, and other product routes remain deferred.
